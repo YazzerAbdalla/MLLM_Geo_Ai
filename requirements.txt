@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+geopandas
+shapely
+sentence-transformers
+pytest
+httpx
+scikit-learn
+pandas
+pyproj
