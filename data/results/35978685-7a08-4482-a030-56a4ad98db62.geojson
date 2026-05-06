@@ -1,0 +1,1 @@
+{"type": "FeatureCollection", "features": [{"cell_id": 0, "dominant_class": "Commercial", "confidences": {"Residential": 0.3217815160751343, "Commercial": 0.3448941707611084, "Industrial": 0.33332428336143494}}]}

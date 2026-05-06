@@ -1,0 +1,12 @@
+{
+  "accuracy": 1.0,
+  "f1_macro": 1.0,
+  "f1_per_class": [
+    1.0
+  ],
+  "confusion_matrix": [
+    [
+      195
+    ]
+  ]
+}

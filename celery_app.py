@@ -1,0 +1,28 @@
+"""
+ * Celery application configuration.
+"""
+import os
+from celery import Celery
+
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+
+celery_app = Celery(
+    "mllm_geo_ai",
+    broker=REDIS_URL,
+    backend=REDIS_URL,
+    include=["tasks.load_area", "tasks.classify"]
+)
+
+celery_app.conf.update(
+    task_serializer="json",
+    result_serializer="json",
+    accept_content=["json"],
+    timezone="UTC",
+    task_routes={
+        "tasks.classify.*": {"queue": "gpu"},
+        "tasks.load_area.*": {"queue": "cpu"},
+    }
+)
+
+if os.getenv("TESTING"):
+    celery_app.conf.task_always_eager = True

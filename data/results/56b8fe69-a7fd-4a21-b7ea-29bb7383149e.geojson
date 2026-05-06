@@ -1,0 +1,1 @@
+{"type": "FeatureCollection", "features": [{"cell_id": 0, "dominant_class": "Industrial", "confidences": {"Residential": 0.31843581795692444, "Commercial": 0.32912394404411316, "Industrial": 0.35244020819664}, "road_density_km_per_km2": 0.0, "node_count": 0, "poi_top_categories": [], "satellite_thumbnail_url": "/api/v1/thumbnails/grid_ad7d5761/0.jpg"}]}

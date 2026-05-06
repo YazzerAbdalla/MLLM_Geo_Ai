@@ -1,0 +1,225 @@
+"""
+ * API interface for the MLLM-Geo-AI application.
+ * Defines the HTTP endpoints for interacting with the multi-modal classification pipeline.
+ """
+from fastapi import APIRouter, HTTPException, Response
+from fastapi.responses import JSONResponse, FileResponse
+from pydantic import BaseModel
+from typing import List, Optional, Literal
+import os
+import uuid
+import geopandas as gpd
+import json
+
+from app.infrastructure.job_store import job_store
+from app.application.fusion_service import MultiModalClassificationUseCase
+from app.application.export_service import ExportService
+from app.infrastructure.satellite_loader import SatelliteImageLoader
+from app.infrastructure.road_network import RoadNetworkLoader
+from app.domain.spatial_service import generate_grid
+
+router = APIRouter()
+
+# Async task import guard - prevents startup crash
+try:
+    from tasks.load_area import load_area_task
+    from tasks.classify import classify_task
+    TASKS_AVAILABLE = True
+except ImportError:
+    TASKS_AVAILABLE = False
+
+# --- Pydantic Models ---
+class LoadAreaRequest(BaseModel):
+    bbox: Optional[List[float]] = None
+    place_name: Optional[str] = None
+    grid_size: int = 500
+    modalities: List[str] = ["poi", "image", "graph"]
+
+class ClassifyRequest(BaseModel):
+    grid_id: str
+    modalities: List[str] = ["poi", "image", "graph"]
+    fusion_method: str = "concat"
+    model_version: Optional[str] = "v1.0"
+
+
+class QueryRequest(BaseModel):
+    question: str
+    grid_id: str
+
+# --- Endpoints ---
+
+@router.post("/load-area", status_code=202)
+async def load_area(request: LoadAreaRequest):
+    if not TASKS_AVAILABLE:
+        raise HTTPException(
+            status_code=501,
+            detail={
+                "error": "Async task pipeline not yet implemented",
+                "message": "This feature is planned for future implementation",
+                "docs": "See docs/project_status.md for system status",
+                "workaround": "Use a smaller synchronous workflow or wait for future release"
+            }
+        )
+
+    job_id = job_store.create_job("load")
+
+    bbox = request.bbox
+    if not bbox:
+        bbox = [31.10, 29.90, 31.30, 30.10]
+
+    min_x, min_y, max_x, max_y = bbox
+    from app.domain.spatial_service import generate_grid
+    grid_gdf = generate_grid((min_x, min_y, max_x, max_y), cell_size_m=request.grid_size)
+    num_cells = len(grid_gdf)
+
+    if num_cells > 500:
+        raise HTTPException(
+            status_code=413,
+            detail=f"Area too large: {num_cells} cells exceed the 500-cell limit. Zoom in or increase grid_size."
+        )
+
+    from tasks.load_area import load_area_task
+    load_area_task.delay(job_id, bbox, request.grid_size, request.modalities)
+
+    return {
+        "job_id": job_id,
+        "status_url": f"/api/v1/area-status/{job_id}",
+        "websocket_url": f"ws://localhost:8000/api/v1/ws/progress/{job_id}"
+    }
+
+@router.get("/area-status/{job_id}")
+async def get_area_status(job_id: str):
+    job = job_store.get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+        
+    response = {
+        "job_id": job["id"],
+        "status": job["status"],
+        "step": job["step"],
+        "progress": job["progress"],
+        "error": job["error"]
+    }
+    if job["status"] == "completed":
+        response["grid_id"] = job.get("grid_id")
+        response["num_cells"] = job.get("num_cells", 0)
+        response["geojson_preview_url"] = f"/api/v1/grid/{job.get('grid_id')}/preview"
+        
+    return response
+
+@router.get("/grid/{grid_id}/preview")
+async def get_grid_preview(grid_id: str):
+    grid_data = job_store.get_grid(grid_id)
+    if not grid_data:
+        raise HTTPException(status_code=404, detail="Grid not found")
+
+    geojson_str = grid_data["gdf"].to_json()
+    return Response(content=geojson_str, media_type="application/geo+json")
+
+@router.post("/classify", status_code=202)
+async def classify_grid(request: ClassifyRequest):
+    if not TASKS_AVAILABLE:
+        raise HTTPException(
+            status_code=501,
+            detail={
+                "error": "Async task pipeline not yet implemented",
+                "message": "This feature is planned for future implementation",
+                "docs": "See docs/project_status.md for system status",
+                "workaround": "Use a smaller synchronous workflow or wait for future release"
+            }
+        )
+
+    job_id = job_store.create_job("classify")
+    from tasks.classify import classify_task
+    classify_task.delay(job_id, request.grid_id, request.modalities, request.fusion_method)
+    return {
+        "job_id": job_id,
+        "status_url": f"/api/v1/classify-status/{job_id}",
+        "websocket_url": f"ws://localhost:8000/api/v1/ws/progress/{job_id}"
+    }
+
+@router.get("/classify-status/{job_id}")
+async def get_classify_status(job_id: str):
+    job = job_store.get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+        
+    response = {
+        "job_id": job["id"],
+        "status": job["status"],
+        "step": job["step"],
+        "progress": job["progress"],
+        "error": job["error"]
+    }
+    if job["status"] == "completed":
+        response["result_url"] = f"/api/v1/classification-result/{job_id}"
+        
+    return response
+
+@router.get("/classification-result/{job_id}")
+async def get_classification_result(job_id: str):
+    job = job_store.get_job(job_id)
+    if not job or job["status"] != "completed":
+        raise HTTPException(status_code=404, detail="Job not found or not completed")
+
+    result_path = f"data/results/{job_id}.geojson"
+    if not os.path.exists(result_path):
+        results = job.get("result_data", [])
+        return {"type": "FeatureCollection", "features": results}
+
+    with open(result_path) as f:
+        content = f.read()
+    return Response(content=content, media_type="application/geo+json")
+
+@router.get("/export/{job_id}")
+async def export_results(job_id: str, format: str = "geojson"):
+    job = job_store.get_job(job_id)
+    if not job or job["status"] != "completed":
+        raise HTTPException(status_code=404, detail="Job not found or not completed")
+
+    result_path = f"data/results/{job_id}.geojson"
+    if not os.path.exists(result_path):
+        raise HTTPException(status_code=404, detail="Result file not found")
+
+    svc = ExportService()
+    if format == "geojson":
+        data = svc.to_geojson(result_path)
+        media_type = "application/geo+json"
+        filename = f"{job_id}.geojson"
+    elif format == "csv":
+        data = svc.to_csv(result_path)
+        media_type = "text/csv"
+        filename = f"{job_id}.csv"
+    elif format == "shapefile":
+        data = svc.to_shapefile(result_path)
+        media_type = "application/zip"
+        filename = f"{job_id}_shapefile.zip"
+    else:
+        raise HTTPException(status_code=400, detail="format must be geojson, csv, or shapefile")
+
+    return Response(
+        content=data,
+        media_type=media_type,
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+    )
+
+@router.get("/thumbnails/{grid_id}/{cell_id}.jpg")
+async def get_thumbnail(grid_id: str, cell_id: str):
+    png_path = f"data/sat_images/cell_{cell_id}.png"
+    if not os.path.exists(png_path):
+        raise HTTPException(status_code=404, detail="Thumbnail not found")
+
+    from PIL import Image
+    import io
+    img = Image.open(png_path).convert("RGB")
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG", quality=85)
+    return Response(content=buf.getvalue(), media_type="image/jpeg")
+
+
+@router.post("/query")
+async def natural_language_query(body: QueryRequest):
+    raise HTTPException(
+        status_code=501,
+        detail="Natural language query is planned for v2 and not yet implemented."
+    )

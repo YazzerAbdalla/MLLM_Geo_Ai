@@ -1,0 +1,57 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+.venv/
+venv/
+ENV/
+
+# ML Models (keep urban_mlp.pt tracked, ignore others)
+models/*
+models/*.pkl
+checkpoints/
+weights/
+
+# GIS/Data (keep structure, ignore generated)
+data/sat_images/
+data/results/
+data/raw/
+*.tif
+*.tiff
+*.graphml
+
+# Environment
+.env
+.config/
+
+# Development
+*.log
+*.db
+*.sqlite3
+.pytest_cache/
+.mypy_cache/
+
+# Notebooks
+*.ipynb_checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Keep these tracked (optional/advanced)
+# docker-compose.yml
+# Dockerfile  
+# nginx.conf
