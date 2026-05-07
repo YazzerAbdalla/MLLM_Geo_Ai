@@ -54,6 +54,24 @@ ls models/urban_mlp.pt
 
 If you see file contents, the models are ready!
 
+### Step 2b: Download Satellite Images
+
+The satellite images are NOT stored in GitHub. You must download them separately.
+
+**Download from Google Drive**:
+1. Go to: https://drive.google.com/drive/folders/1aju_rOLVd4kmB3rDn7ppl6JMeiaL7QId?usp=sharing
+2. Click the Download button (top right)
+3. Extract the .zip file
+4. Copy the `data/sat_images/` folder to project root (create `data/` folder if needed)
+
+**Verify Satellite Images**:
+```bash
+# Check files exist
+ls data/sat_images/
+```
+
+If you see image files (`.jpg`, `.png`, etc.), the satellite images are ready!
+
 ### Step 3: Run the Server
 
 ```bash
@@ -91,7 +109,8 @@ MLLM_Geo_Ai/
 ├── scripts/            # Helper scripts
 ├── tests/               # Tests
 ├── docs/                # Documentation
-└── data/                # Data files
+├── data/                # Data files
+│   └── sat_images/     # Satellite images
 ```
 
 ---
@@ -160,6 +179,9 @@ MLLM_Geo_Ai/
 
 ### "Model not found"
 **Fix**: Run `python scripts/download_model.py`
+
+### "Satellite images not found"
+**Fix**: Download from the Drive link in the onboarding PDF and place in `data/sat_images/`
 
 See docs/windows_setup_guide.md for Windows-specific help.
 
