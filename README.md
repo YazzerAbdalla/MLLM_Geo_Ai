@@ -35,15 +35,24 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-### Step 2: Verify Models
+### Step 2: Download Models
 
+The AI models (~468MB) are NOT stored in GitHub. You must download them first.
+
+**Download from Google Drive**:
+1. Go to: https://drive.google.com/file/d/1Wf3B8JpAcQXOUWi5tsIcOHXEsoQnQPuD/view?usp=sharing
+2. Click the Download button (top right)
+3. Extract the .zip file
+4. Copy the `models/` folder to project root
+
+**Verify Models**:
 ```bash
-# Check if model is already downloaded
+# Check files exist
 ls models/sentence_transformer/
-
-# If not, download it
-python scripts/download_model.py
+ls models/urban_mlp.pt
 ```
+
+If you see file contents, the models are ready!
 
 ### Step 3: Run the Server
 

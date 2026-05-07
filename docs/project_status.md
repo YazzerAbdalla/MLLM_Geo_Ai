@@ -37,6 +37,12 @@ These features are tested and ready to use:
 - Pre-downloaded: `paraphrase-multilingual-MiniLM-L12-v2`
 - Pre-trained: `models/urban_mlp.pt`
 
+**Getting the Models**:
+1. Download from: https://drive.google.com/file/d/1Wf3B8JpAcQXOUWi5tsIcOHXEsoQnQPuD/view?usp=sharing
+2. Extract the .zip file
+3. Copy `models/` folder to project root
+4. See docs/models/download_model.md for full instructions
+
 ### Scripts
 - Model download: `python scripts/download_model.py`
 - Data processing: `python scripts/process_data.py`
