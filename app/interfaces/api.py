@@ -2,11 +2,12 @@
  * API interface for the MLLM-Geo-AI application.
  * Defines the HTTP endpoints for interacting with the multi-modal classification pipeline.
  """
-from fastapi import APIRouter, HTTPException, Response
-from fastapi.responses import JSONResponse, FileResponse
+from fastapi import APIRouter, HTTPException, Response, UploadFile, File, Form
+from fastapi.responses import JSONResponse , StreamingResponse , FileResponse
 from pydantic import BaseModel
 from typing import List, Optional, Literal
 import os
+import io
 import uuid
 import geopandas as gpd
 import json
@@ -17,6 +18,8 @@ from app.application.export_service import ExportService
 from app.infrastructure.satellite_loader import SatelliteImageLoader
 from app.infrastructure.road_network import RoadNetworkLoader
 from app.domain.spatial_service import generate_grid
+from app.interfaces.helpers import _extract_graph_from_grid_data, _graph_to_geojson
+from app.application.evaluation_service import evaluate_job, export_evaluation_csv
 
 router = APIRouter()
 
@@ -217,6 +220,80 @@ async def get_thumbnail(grid_id: str, cell_id: str):
     return Response(content=buf.getvalue(), media_type="image/jpeg")
 
 
+# End Point -1 DELETE /api/v1/jobs/{job_id}
+@router.delete("/jobs/{job_id}")
+async def cancel_job(job_id: str):
+    job = job_store.get_job(job_id)
+
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    job_store.update_job(
+        job_id,
+        status="cancelled",
+        step="cancelled",
+        progress=0,
+        error=None
+    )
+
+    return {
+        "job_id": job_id,
+        "status": "cancelled",
+        "message": "Job cancelled successfully"
+    }
+
+# End Point -2 GET /api/v1/grid/{grid_id}/graph-topology
+@router.get("/grid/{grid_id}/graph-topology")
+async def get_graph_topology(grid_id: str):
+    try:
+        grid_data = job_store.get_grid(grid_id)
+    except NotImplementedError:
+        raise HTTPException(
+            status_code=501,
+            detail="Grid storage is not implemented yet."
+        )
+
+    if not grid_data:
+        raise HTTPException(status_code=404, detail="Grid not found")
+
+    graph = _extract_graph_from_grid_data(grid_data)
+
+    if graph is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Road network graph not available for this grid"
+        )
+
+    geojson = _graph_to_geojson(graph)
+
+    if not geojson:
+        raise HTTPException(
+            status_code=404,
+            detail="Could not build graph topology GeoJSON"
+        )
+
+    return JSONResponse(content=geojson)
+
+# End Point -3 POST /api/v1/evaluate
+@router.post("/evaluate")
+async def evaluate(job_id: str = Form(...), ground_truth_file: UploadFile = File(...)):
+    result = await evaluate_job(job_id, ground_truth_file)
+    return JSONResponse(content=result)
+
+# End Point -4 GET /api/v1/evaluate/{job_id}/export
+@router.get("/evaluate/{job_id}/export")
+async def export_evaluation(job_id: str):
+    csv_bytes = export_evaluation_csv(job_id)
+    return StreamingResponse(
+        io.BytesIO(csv_bytes),
+        media_type="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="evaluation_{job_id}.csv"'}
+    )
+
+# End Point -5 POST /api/v1/mllm/train
+
+
+# End Point -6 POST /api/v1/query (Digital Twin NL)
 @router.post("/query")
 async def natural_language_query(body: QueryRequest):
     raise HTTPException(
