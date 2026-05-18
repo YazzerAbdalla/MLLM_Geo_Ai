@@ -1,4 +1,4 @@
 Experiment,Accuracy,Precision,Recall,F1-Score,Spatial Accuracy
 POI Only,1.0,1.0,1.0,1.0,N/A
-POI + Image,1.0,1.0,1.0,1.0,0.8419
-Full Model,1.0,1.0,1.0,1.0,0.8419
+POI + Image,1.0,1.0,1.0,1.0,0.8455
+Full Model,1.0,1.0,1.0,1.0,0.8455
