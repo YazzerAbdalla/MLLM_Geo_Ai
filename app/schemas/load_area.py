@@ -2,7 +2,7 @@
  * Load Area Request Schema with validation.
 """
 from pydantic import BaseModel, field_validator
-from typing import Optional, List, Literal
+from typing import Optional, List
 
 
 class LoadAreaRequest(BaseModel):

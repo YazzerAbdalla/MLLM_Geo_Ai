@@ -3,7 +3,7 @@
 """
 import uuid
 import datetime
-from sqlalchemy import Column, String, Integer, Float, DateTime
+from sqlalchemy import Column, String, Integer, DateTime
 from app.infrastructure.db import Base
 
 
