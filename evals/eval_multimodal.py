@@ -29,6 +29,55 @@ MODEL_PATH = "models/urban_mlp.pt"
 OUTPUT_PATH = "evals/multimodal_results.json"
 
 
+def compute_spatial_accuracy(y_pred, test_df):
+    spatial_matches = 0
+    total_cells = 0
+
+    if "X" in test_df.columns and "Y" in test_df.columns:
+
+        pred_map = {}
+
+        for i in range(len(y_pred)):
+            x = int(round(test_df.loc[i, "X"]))
+            y_coord = int(round(test_df.loc[i, "Y"]))
+            pred_map[(x, y_coord)] = y_pred[i]
+
+        directions = [
+            (-1, -1), (-1, 0), (-1, 1),
+            (0, -1),           (0, 1),
+            (1, -1),  (1, 0),  (1, 1)
+        ]
+
+        for i in range(len(y_pred)):
+            x = int(round(test_df.loc[i, "X"]))
+            y_coord = int(round(test_df.loc[i, "Y"]))
+            neighbor_preds = []
+
+            for dx, dy in directions:
+                neighbor = (x + dx, y_coord + dy)
+                if neighbor in pred_map:
+                    neighbor_preds.append(pred_map[neighbor])
+
+            if neighbor_preds:
+                majority_vote = max(
+                    set(neighbor_preds),
+                    key=neighbor_preds.count
+                )
+                if majority_vote == y_pred[i]:
+                    spatial_matches += 1
+                total_cells += 1
+
+        spatial_accuracy = (
+            spatial_matches / total_cells
+            if total_cells > 0 else 0.0
+        )
+    else:
+        print("Warning: X/Y columns not found")
+        spatial_accuracy = 0.0
+
+    return spatial_accuracy
+
+
 def main():
 
     if not os.path.exists(DATA_PATH):
@@ -168,60 +217,8 @@ def main():
     # AI-10 Spatial Accuracy
     # 8-neighbor voting
     # ====================
-    spatial_matches = 0
-    total_cells = 0
-
     test_df = test_df.reset_index(drop=True)
-
-    if "X" in test_df.columns and "Y" in test_df.columns:
-
-        pred_map = {}
-
-        for i in range(len(y_pred)):
-            x = int(round(test_df.loc[i, "X"]))
-            y_coord = int(round(test_df.loc[i, "Y"]))
-
-            pred_map[(x, y_coord)] = y_pred[i]
-
-        directions = [
-            (-1, -1), (-1, 0), (-1, 1),
-            (0, -1),           (0, 1),
-            (1, -1),  (1, 0),  (1, 1)
-        ]
-
-        for i in range(len(y_pred)):
-
-            x = int(round(test_df.loc[i, "X"]))
-            y_coord = int(round(test_df.loc[i, "Y"]))
-
-            neighbor_preds = []
-
-            for dx, dy in directions:
-                neighbor = (x + dx, y_coord + dy)
-
-                if neighbor in pred_map:
-                    neighbor_preds.append(pred_map[neighbor])
-
-            if neighbor_preds:
-
-                majority_vote = max(
-                    set(neighbor_preds),
-                    key=neighbor_preds.count
-                )
-
-                if majority_vote == y_pred[i]:
-                    spatial_matches += 1
-
-                total_cells += 1
-
-        spatial_accuracy = (
-            spatial_matches / total_cells
-            if total_cells > 0 else 0.0
-        )
-
-    else:
-        print("Warning: X/Y columns not found")
-        spatial_accuracy = 0.0
+    spatial_accuracy = compute_spatial_accuracy(y_pred, test_df)
 
     results = {
         "accuracy": round(float(acc), 4),
