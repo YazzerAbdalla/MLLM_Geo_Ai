@@ -17,5 +17,5 @@ def test_mlp_hidden_dim():
     # // Verify that it is a linear layer
     assert isinstance(first_layer, torch.nn.Linear)
     
-    # // Verify the output dimension is exactly 128
-    assert first_layer.out_features == 128, f"Expected hidden_dim=128, got {first_layer.out_features}"
+    # // Verify the output dimension is exactly 256
+    assert first_layer.out_features == 256, f"Expected hidden_dim=256, got {first_layer.out_features}"
