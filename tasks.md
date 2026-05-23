@@ -32,13 +32,28 @@ This file tracks the status of all project features and work.
 
 ---
 
-## In Progress
+## Completed — AI Tasks
 
-Nothing currently in progress.
+### Student 3 — Data / Dataset
+- [x] AI-1: Re-label data/raw/project.csv and handle missing classes -> Complete
+- [x] AI-2: Verify data_loader.py reads 'label' correctly -> Complete
+- [x] AI-3: Write scripts/verify_dataset.py verification script -> Complete
 
----
+### Student 4 — Training Pipeline
+- [x] AI-4: Fix train_multimodal.py line 27 (poi_enc.encode -> embed_texts) -> Complete
+- [x] AI-5: Change mlp_model.py hidden_dim=256 -> 128 & retrain -> Complete
+- [x] AI-6: Add validation loop & history JSON in train_multimodal.py -> Complete
+- [x] AI-8: Add --modalities flag for ablation studies in training -> Complete
+
+### Student 5 — Evaluation
+- [x] AI-9: Add norm fields in fusion_service.py -> Complete
+- [x] AI-10: Implement 8-neighbor Spatial Accuracy in eval_multimodal.py -> Complete
+- [x] AI-11: Run 3 ablation experiments and save CSVs in evals/ablation_results/ -> Complete
 
 ## Pending
+
+### Student 4 — Training Pipeline
+- [ ] AI-7: Pre-download Cairo road network (data/raw/roads.graphml)
 
 ### General Documentation
 - [ ] Rewrite README.md with full setup
@@ -131,8 +146,8 @@ These features are planned for future implementation:
 
 | Category | Count |
 |----------|-------|
-| Completed | 7 |
-| Pending | 5 |
+| Completed | 14 (7 doc/api + 10 AI tasks, 3 overlap) |
+| Pending | 1 (AI-7) |
 | Future | Many |
 
 **Focus on completed items first. Don't worry about future items yet!**
