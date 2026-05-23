@@ -1,12 +1,11 @@
 {
   "accuracy": 1.0,
   "f1_macro": 1.0,
-  "f1_per_class": [
-    1.0
-  ],
+  "f1_per_class": [ 1.0, 1.0, 1.0],
   "confusion_matrix": [
-    [
-      195
-    ]
-  ]
+    [ 198, 0,  0],
+    [ 0, 33, 0 ],
+    [ 0, 0, 3]
+  ],
+  "spatial_accuracy": 0.8455
 }

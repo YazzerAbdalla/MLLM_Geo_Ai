@@ -1,0 +1,2 @@
+accuracy,f1_macro,f1_per_class,confusion_matrix,spatial_accuracy,experiment,modalities
+1.0,1.0,"[1.0, 1.0, 1.0]","[[198, 0, 0], [0, 33, 0], [0, 0, 3]]",0.8419,all_modalities,"poi,image,graph"

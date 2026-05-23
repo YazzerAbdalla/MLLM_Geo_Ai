@@ -3,6 +3,8 @@
 """
 import os
 from celery import Celery
+import sys
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 
