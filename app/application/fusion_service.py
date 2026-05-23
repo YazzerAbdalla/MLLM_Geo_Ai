@@ -1,8 +1,15 @@
 """
  * Multi-Modal Classification Use Case.
+ *
+ * Orchestrates the end-to-end process of classifying urban grid cells using
+ * multiple data modalities including POI text data, satellite imagery,
+ * and road network graph features.
 """
+
 import os
 import json
+from collections import Counter
+
 import numpy as np
 import torch
 import geopandas as gpd
@@ -16,14 +23,47 @@ from app.domain.spatial_service import create_multimodal_feature
 
 
 class MultiModalClassificationUseCase:
+    """
+     * Orchestrates the encoding and classification of multi-modal features.
+     *
+     * This class serves as the main orchestrator for the urban land use
+     * classification pipeline. It integrates three data modalities:
+     *
+     * - Point of Interest (POI) text descriptions
+     * - Satellite imagery
+     * - Road network metrics
+     *
+     * AI-9 / FR-29 additions:
+     * - Embedding norm tracking
+     * - Extra explainability metadata
+     """
 
     def __init__(self):
+        """
+         * Initializes the multi-modal classification use case.
+         *
+         * Components:
+         * - POI encoder
+         * - Image encoder
+         * - MLP classifier
+         *
+         * Classifier runs in evaluation mode for inference.
+         """
         self.poi_encoder = Embedder()
         self.image_encoder = ImageEncoder()
         self.classifier = UrbanMLP()
+
         self.classifier.eval()
 
     def save_result(self, job_id: str, features: list[dict]) -> str:
+        """
+         * Saves classification results as a GeoJSON file.
+         *
+         * @param job_id: Unique identifier for classification job
+         * @param features: Result features array
+         *
+         * @returns str: Path to saved GeoJSON file
+         """
         os.makedirs("data/results", exist_ok=True)
 
         path = f"data/results/{job_id}.geojson"
@@ -39,7 +79,33 @@ class MultiModalClassificationUseCase:
         return path
 
     def execute(self, job_id: str, grid_id: str):
+        """
+         * Executes the complete multi-modal classification pipeline.
+         *
+         * Workflow:
+         * 1. Load grid data
+         * 2. Extract multimodal features
+         * 3. Encode images in batch
+         * 4. Fuse POI + image + graph features
+         * 5. Run classifier inference
+         * 6. Post-process predictions
+         * 7. Save results
+         *
+         * Progress tracking:
+         * - 10%: loading_grid
+         * - 30%: encoding_features
+         * - 80%: running_inference
+         * - 100%: completed
+         *
+         * @param job_id: Job tracking identifier
+         * @param grid_id: Grid identifier
+         """
+
         try:
+            # ==================================================
+            # Step 1: Load Grid Data
+            # ==================================================
+
             job_store.update_job(
                 job_id,
                 status="running",
@@ -50,9 +116,15 @@ class MultiModalClassificationUseCase:
             grid_data = job_store.get_grid(grid_id)
 
             if not grid_data:
-                raise ValueError(f"Grid {grid_id} not found.")
+                raise ValueError(
+                    f"Grid {grid_id} not found."
+                )
 
             grid_gdf = grid_data["gdf"]
+
+            # ==================================================
+            # Step 2: Prepare Cell Data
+            # ==================================================
 
             job_store.update_job(
                 job_id,
@@ -63,7 +135,11 @@ class MultiModalClassificationUseCase:
             cell_data = []
 
             for idx, cell in grid_gdf.iterrows():
-                cell_id = cell.get("cell_id", idx)
+
+                cell_id = cell.get(
+                    "cell_id",
+                    idx
+                )
 
                 img_path = os.path.join(
                     "data",
@@ -73,51 +149,89 @@ class MultiModalClassificationUseCase:
 
                 cell_data.append({
                     "cell_id": cell_id,
-                    "text": cell.get("text_des", ""),
+                    "text": cell.get(
+                        "text_des",
+                        ""
+                    ),
                     "img_path": img_path,
-                    "node_count": cell.get("node_count", 0),
-                    "total_length": cell.get("total_length", 0.0),
-                    "avg_degree": cell.get("avg_degree", 0.0),
+                    "node_count": cell.get(
+                        "node_count",
+                        0
+                    ),
+                    "total_length": cell.get(
+                        "total_length",
+                        0.0
+                    ),
+                    "avg_degree": cell.get(
+                        "avg_degree",
+                        0.0
+                    ),
                     "geometry": cell.geometry
                 })
 
-            img_paths = [c["img_path"] for c in cell_data]
+            # ==================================================
+            # Step 3: Batch Image Encoding
+            # ==================================================
 
-            img_embeddings = self.image_encoder.encode_batch(
-                img_paths
+            img_paths = [
+                c["img_path"]
+                for c in cell_data
+            ]
+
+            img_embeddings = (
+                self.image_encoder.encode_batch(
+                    img_paths
+                )
             )
+
+            # ==================================================
+            # Step 4: Feature Fusion
+            # ==================================================
 
             features = []
             cell_ids = []
 
             for i, cell_info in enumerate(cell_data):
 
-                # POI embedding
+                # ----------------------------------------------
+                # 1. POI Text Embedding
+                # ----------------------------------------------
+
                 text = cell_info["text"]
 
                 if text:
-                    poi_emb = self.poi_encoder.embed_texts(
-                        [text]
-                    )[0]
+                    poi_emb = (
+                        self.poi_encoder.embed_texts(
+                            [text]
+                        )[0]
+                    )
                 else:
                     poi_emb = np.zeros(
                         384,
                         dtype=np.float32
                     )
 
-                # Image embedding
+                # ----------------------------------------------
+                # 2. Image Embedding
+                # ----------------------------------------------
+
                 img_emb = img_embeddings[i]
 
-                # Graph features
+                # ----------------------------------------------
+                # 3. Graph Features
+                # ----------------------------------------------
+
                 graph_feat = np.array([
                     cell_info["node_count"],
                     cell_info["total_length"],
                     cell_info["avg_degree"]
                 ], dtype=np.float32)
 
-                # ==================
+                # ==================================================
                 # AI-9 (FR-29)
-                # ==================
+                # Embedding Norm Explainability
+                # ==================================================
+
                 text_embedding_norm = float(
                     np.linalg.norm(poi_emb)
                 )
@@ -126,14 +240,17 @@ class MultiModalClassificationUseCase:
                     np.linalg.norm(graph_feat)
                 )
 
-                # Save norms per cell
-                cell_info["text_embedding_norm"] = (
-                    text_embedding_norm
-                )
+                cell_info[
+                    "text_embedding_norm"
+                ] = text_embedding_norm
 
-                cell_info["graph_embedding_norm"] = (
-                    graph_embedding_norm
-                )
+                cell_info[
+                    "graph_embedding_norm"
+                ] = graph_embedding_norm
+
+                # ----------------------------------------------
+                # 4. Multimodal Fusion
+                # ----------------------------------------------
 
                 fused = create_multimodal_feature(
                     poi_emb,
@@ -142,9 +259,14 @@ class MultiModalClassificationUseCase:
                 )
 
                 features.append(fused)
+
                 cell_ids.append(
                     cell_info["cell_id"]
                 )
+
+            # ==================================================
+            # Step 5: Model Inference
+            # ==================================================
 
             job_store.update_job(
                 job_id,
@@ -158,7 +280,14 @@ class MultiModalClassificationUseCase:
             )
 
             with torch.no_grad():
-                probs = self.classifier(X).numpy()
+                probs = (
+                    self.classifier(X)
+                    .numpy()
+                )
+
+            # ==================================================
+            # Step 6: Post Processing
+            # ==================================================
 
             results = []
 
@@ -171,10 +300,24 @@ class MultiModalClassificationUseCase:
             for i, cell_id in enumerate(cell_ids):
 
                 cell_info = cell_data[i]
+
                 p = probs[i]
 
-                node_count = cell_info["node_count"]
-                total_length = cell_info["total_length"]
+                dominant_idx = int(
+                    np.argmax(p)
+                )
+
+                # ----------------------------------------------
+                # Road Density Calculation
+                # ----------------------------------------------
+
+                node_count = (
+                    cell_info["node_count"]
+                )
+
+                total_length = (
+                    cell_info["total_length"]
+                )
 
                 cell_area_m2 = (
                     cell_info["geometry"].area
@@ -193,11 +336,15 @@ class MultiModalClassificationUseCase:
                     else 0.0
                 )
 
+                # ----------------------------------------------
+                # Top POI Categories
+                # ----------------------------------------------
+
                 text_desc = cell_info["text"]
+
                 poi_top = []
 
                 if text_desc:
-                    from collections import Counter
 
                     word_counts = Counter(
                         text_desc.split()
@@ -208,11 +355,16 @@ class MultiModalClassificationUseCase:
                         in word_counts.most_common(3)
                     ]
 
+                # ==================================================
+                # Final Result Object
+                # ==================================================
+
                 results.append({
+
                     "cell_id": cell_id,
 
                     "dominant_class":
-                        classes[int(np.argmax(p))],
+                        classes[dominant_idx],
 
                     "confidences": {
                         "Residential": float(p[0]),
@@ -229,9 +381,11 @@ class MultiModalClassificationUseCase:
                     "poi_top_categories":
                         poi_top,
 
-                    # ==================
+                    # ==================================================
                     # AI-9 (FR-29)
-                    # ==================
+                    # Explainability Metrics
+                    # ==================================================
+
                     "text_embedding_norm":
                         cell_info[
                             "text_embedding_norm"
@@ -247,6 +401,10 @@ class MultiModalClassificationUseCase:
                         f"{grid_id}/"
                         f"{cell_id}.jpg"
                 })
+
+            # ==================================================
+            # Step 7: Save Results
+            # ==================================================
 
             result_path = self.save_result(
                 job_id,
@@ -267,6 +425,11 @@ class MultiModalClassificationUseCase:
             )
 
         except Exception as e:
+            """
+             * Handles pipeline failures.
+             * Updates job status to failed.
+             """
+
             job_store.update_job(
                 job_id,
                 status="failed",
