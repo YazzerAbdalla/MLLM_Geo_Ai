@@ -6,6 +6,7 @@ from fastapi import APIRouter, HTTPException, Response, UploadFile, File, Form
 from fastapi.responses import JSONResponse , StreamingResponse , FileResponse
 from pydantic import BaseModel
 from typing import List, Optional, Literal
+from celery_app import celery_app
 import os
 import io
 import uuid
@@ -82,7 +83,15 @@ async def load_area(request: LoadAreaRequest):
         )
 
     from tasks.load_area import load_area_task
-    load_area_task.delay(job_id, bbox, request.grid_size, request.modalities)
+    result = load_area_task.apply_async(
+       args=[job_id, bbox, request.grid_size, request.modalities]
+    )
+
+    job_store.update_job(
+    job_id,
+    celery_task_id=result.id,
+    status="queued"
+    )
 
     return {
         "job_id": job_id,
@@ -134,7 +143,16 @@ async def classify_grid(request: ClassifyRequest):
 
     job_id = job_store.create_job("classify")
     from tasks.classify import classify_task
-    classify_task.delay(job_id, request.grid_id, request.modalities, request.fusion_method)
+    result = classify_task.apply_async(
+        args=[job_id, request.grid_id, request.modalities, request.fusion_method]
+    )
+
+    job_store.update_job(
+    job_id,
+    celery_task_id=result.id,
+    status="queued"
+    )
+
     return {
         "job_id": job_id,
         "status_url": f"/api/v1/classify-status/{job_id}",
@@ -227,6 +245,15 @@ async def cancel_job(job_id: str):
 
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
+
+    task_id = job.get("celery_task_id")
+
+    if task_id:
+        celery_app.control.revoke(
+            task_id,
+            terminate=True,
+            signal="SIGTERM"
+        )
 
     job_store.update_job(
         job_id,

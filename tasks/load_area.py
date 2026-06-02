@@ -12,6 +12,7 @@ load_dotenv()
 def load_area_task(self, job_id: str, bbox: list, grid_size: int, modalities: list = None):
     import ee
     from app.infrastructure.job_store import JobStore
+    from celery.exceptions import Ignore
 
     # Initialize GEE in this worker process
     project_id = os.getenv('EARTH_ENGINE_PROJECT')
@@ -26,11 +27,21 @@ def load_area_task(self, job_id: str, bbox: list, grid_size: int, modalities: li
         modalities = ["poi", "image", "graph"]
 
     try:
+        job = store.get_job(job_id) or {}
+
+        if job.get("status") == "cancelled":
+           raise Ignore()
+        
         store.update_job(job_id, status="running", step="generating_grid", progress=0.1)
 
         from app.domain.spatial_service import generate_grid
         min_x, min_y, max_x, max_y = bbox
         grid_gdf = generate_grid((min_x, min_y, max_x, max_y), cell_size_m=grid_size)
+
+        job = store.get_job(job_id) or {}
+
+        if job.get("status") == "cancelled":
+           raise Ignore()
 
         grid_id = f"grid_{job_id[:8]}"
 
@@ -39,6 +50,12 @@ def load_area_task(self, job_id: str, bbox: list, grid_size: int, modalities: li
             from app.infrastructure.satellite_loader import SatelliteImageLoader
             loader = SatelliteImageLoader()
             loader.download_for_grid(grid_gdf, grid_id)
+
+        job = store.get_job(job_id) or {}
+
+        if job.get("status") == "cancelled":
+           raise Ignore()
+
 
         store.update_job(job_id, step="downloading_road_network", progress=0.6)
         if "graph" in modalities:
