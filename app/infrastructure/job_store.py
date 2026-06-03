@@ -3,6 +3,8 @@
  * Uses Redis for persistence.
  """
 import uuid
+from typing import Any
+
 from app.infrastructure.redis_store import RedisJobStore
 
 _redis_store = RedisJobStore()
@@ -39,41 +41,35 @@ class JobStore:
         """
         return _redis_store.get_job(job_id)
 
-    def store_grid(self, grid_id: str, grid_data: any):
+    def store_grid(self, grid_id: str, grid_data: Any):
         """
          * Store grid metadata or GeoDataFrame in SQLite and local file system.
-         *
-         * @param {str} grid_id - The ID of the grid to store
-         * @param {any} grid_data - Dictionary containing 'gdf' (GeoDataFrame) and 'bbox' (list)
-         * @returns {None}
         """
-        # // Import required modules
         import os
         import json
         import geopandas as gpd
         from app.infrastructure.db import SessionLocal
         from app.models.grid import Grid
 
-        # // Extract GeoDataFrame and bbox
         gdf = grid_data["gdf"]
         bbox = grid_data["bbox"]
-        
-        # // Ensure data directory exists
+
         os.makedirs("data/grids", exist_ok=True)
         geojson_path = f"data/grids/{grid_id}.geojson"
-        
-        # // Save GeoDataFrame as GeoJSON locally
+
+        # Save GeoDataFrame locally
         gdf.to_file(geojson_path, driver="GeoJSON")
-        
-        # // Create DB session and save grid metadata to SQLite
+
+        # Save metadata in SQLite
         db = SessionLocal()
         try:
             db_grid = db.query(Grid).filter(Grid.id == grid_id).first()
+
             if not db_grid:
                 db_grid = Grid(
                     id=grid_id,
                     bbox=json.dumps(bbox),
-                    grid_size_m=500, # // default cell size
+                    grid_size_m=500,
                     num_cells=len(gdf),
                     status="completed"
                 )
@@ -82,6 +78,7 @@ class JobStore:
                 db_grid.bbox = json.dumps(bbox)
                 db_grid.num_cells = len(gdf)
                 db_grid.status = "completed"
+
             db.commit()
         finally:
             db.close()
@@ -89,11 +86,7 @@ class JobStore:
     def get_grid(self, grid_id: str):
         """
          * Retrieve grid data from SQLite and local GeoJSON file.
-         *
-         * @param {str} grid_id - The ID of the grid to retrieve
-         * @returns {dict|None} Dictionary with 'gdf' and 'bbox', or None if not found
         """
-        # // Import required modules
         import os
         import json
         import geopandas as gpd
@@ -102,19 +95,17 @@ class JobStore:
 
         db = SessionLocal()
         try:
-            # // Fetch grid record from SQLite
             db_grid = db.query(Grid).filter(Grid.id == grid_id).first()
             if not db_grid:
                 return None
-            
-            # // Read GeoJSON file if it exists
+
             geojson_path = f"data/grids/{grid_id}.geojson"
             if not os.path.exists(geojson_path):
                 return None
-                
+
             gdf = gpd.read_file(geojson_path)
             bbox = json.loads(db_grid.bbox)
-            
+
             return {"gdf": gdf, "bbox": bbox}
         finally:
             db.close()
