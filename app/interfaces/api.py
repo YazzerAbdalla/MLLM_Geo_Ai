@@ -7,11 +7,6 @@ from fastapi.responses import JSONResponse , StreamingResponse , FileResponse
 from pydantic import BaseModel
 from typing import List, Optional, Literal
 from celery_app import celery_app
-import os
-import io
-import uuid
-import geopandas as gpd
-import json
 
 from app.infrastructure.job_store import job_store
 from app.application.fusion_service import MultiModalClassificationUseCase
@@ -21,6 +16,9 @@ from app.infrastructure.road_network import RoadNetworkLoader
 from app.domain.spatial_service import generate_grid
 from app.interfaces.helpers import _extract_graph_from_grid_data, _graph_to_geojson
 from app.application.evaluation_service import evaluate_job, export_evaluation_csv
+
+import os,io,uuid,json
+import geopandas as gpd
 
 router = APIRouter()
 
