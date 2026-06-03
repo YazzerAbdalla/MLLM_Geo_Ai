@@ -75,6 +75,7 @@ class RedisJobStore:
             "error": self.r.get(f"job:{job_id}:error"),
             "result_url": self.r.get(f"job:{job_id}:result_url"),
             "grid_id": self.r.get(f"job:{job_id}:grid_id"),
+            "celery_task_id": self.r.get(f"job:{job_id}:celery_task_id"),
         }
 
     def delete_job(self, job_id: str):
