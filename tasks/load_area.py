@@ -63,7 +63,7 @@ def load_area_task(self, job_id: str, bbox: list, grid_size: int, modalities: li
         if "graph" in modalities:
            store.update_job(job_id, step="downloading_road_network", progress=0.6)
 
-           graphml_path = f"data/raw/{grid_id}_roads.graphml"
+           graphml_path = "data/raw/roads.graphml"
        
            # bbox عندك: (min_x, min_y, max_x, max_y)
            # RoadNetworkLoader عايزها: (north, south, east, west)
