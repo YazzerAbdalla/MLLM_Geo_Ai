@@ -72,11 +72,64 @@ ls data/sat_images/
 
 If you see image files (`.jpg`, `.png`, etc.), the satellite images are ready!
 
+### Step 2c: Install Docker
+
+Install docker desktop first: https://www.docker.com/products/docker-desktop/
+
+
+### Step 2d: setup the environment for docker compose
+
+```bash
+copy .env.example .env
+```
+
+set the values in the .env file
+
+```bash
+set EARTH_ENGINE_PROJECT=your-earth-engine-project
+set REDIS_URL=redis://localhost:6379
+```
+### Step 2e: Download the roads.graphml file
+
+**Download from Google Drive**:
+1. Go to: https://drive.google.com/file/d/1wFRKrYTlpA-IU29oumPZCgHDMOfIEvIg/view?usp=drive_link
+2. Download the file and save it as `roads.graphml` in `data/raw/` folder
+
+**Verify roads.graphml**:
+```bash
+# Check file exists
+ls data/raw/roads.graphml
+```
+
+If you see the file, the roads graph is ready!
+
+
 ### Step 3: Run the Server
 
 ```bash
 python -m app.main
 ```
+
+### Step 3b: Run the Worker for cpu queue
+
+```bash
+celery -A celery_app worker -Q cpu --loglevel=info --pool=solo
+```
+
+
+### Step 3c: Run the Worker for gpu queue
+
+```bash
+celery -A celery_app worker -Q gpu --loglevel=info --pool=solo
+```
+
+### Step 3d: Run the redis server in side the docker 
+
+```bash
+docker compose up -d redis
+```
+Install docker desktop first: https://www.docker.com/products/docker-desktop/
+
 
 ### Step 4: Test It
 
