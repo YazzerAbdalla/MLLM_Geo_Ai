@@ -2,7 +2,7 @@
  * API interface for the MLLM-Geo-AI application.
  * Defines the HTTP endpoints for interacting with the multi-modal classification pipeline.
  """
-from fastapi import APIRouter, HTTPException, Response, UploadFile, File, Form
+from fastapi import APIRouter, HTTPException, Response, UploadFile, File, Form, Query
 from fastapi.responses import JSONResponse , StreamingResponse , FileResponse
 from pydantic import BaseModel
 from typing import List, Optional, Literal
@@ -275,7 +275,11 @@ async def cancel_job(job_id: str):
 
 # End Point -2 GET /api/v1/grid/{grid_id}/graph-topology
 @router.get("/grid/{grid_id}/graph-topology")
-async def get_graph_topology(grid_id: str):
+async def get_graph_topology(
+    grid_id: str,
+    max_nodes: int = Query(500, ge=1, le=5000),
+    simplify: bool = Query(True),
+):
     try:
         grid_data = job_store.get_grid(grid_id)
     except NotImplementedError:
@@ -287,7 +291,11 @@ async def get_graph_topology(grid_id: str):
     if not grid_data:
         raise HTTPException(status_code=404, detail="Grid not found")
 
-    graph = _extract_graph_from_grid_data(grid_data)
+    graph = _extract_graph_from_grid_data(
+        grid_data,
+        max_nodes=max_nodes,
+        simplify=simplify,
+    )
 
     if graph is None:
         raise HTTPException(
