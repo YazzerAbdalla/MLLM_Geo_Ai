@@ -3,18 +3,20 @@
 """
 import sys
 import os
+import json
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import pandas as pd
 import numpy as np
-import json
 import torch
 from sklearn.metrics import accuracy_score, f1_score, confusion_matrix
 from sklearn.model_selection import train_test_split
+
 from app.infrastructure.ai_model import Embedder
 from app.infrastructure.image_encoder import ImageEncoder
 from app.domain.mlp_model import UrbanMLP
+
 
 LABEL_MAP = {
     "Residential": 0,
@@ -29,57 +31,58 @@ MODEL_PATH = "models/urban_mlp.pt"
 OUTPUT_PATH = "evals/multimodal_results.json"
 
 
-def compute_spatial_accuracy(y_pred, test_df):
-    spatial_matches = 0
-    total_cells = 0
-
-    if "X" in test_df.columns and "Y" in test_df.columns:
-
-        pred_map = {}
-
-        for i in range(len(y_pred)):
-            x = int(round(test_df.loc[i, "X"]))
-            y_coord = int(round(test_df.loc[i, "Y"]))
-            pred_map[(x, y_coord)] = y_pred[i]
-
-        directions = [
-            (-1, -1), (-1, 0), (-1, 1),
-            (0, -1),           (0, 1),
-            (1, -1),  (1, 0),  (1, 1)
-        ]
-
-        for i in range(len(y_pred)):
-            x = int(round(test_df.loc[i, "X"]))
-            y_coord = int(round(test_df.loc[i, "Y"]))
-            neighbor_preds = []
-
-            for dx, dy in directions:
-                neighbor = (x + dx, y_coord + dy)
-                if neighbor in pred_map:
-                    neighbor_preds.append(pred_map[neighbor])
-
-            if neighbor_preds:
-                majority_vote = max(
-                    set(neighbor_preds),
-                    key=neighbor_preds.count
-                )
-                if majority_vote == y_pred[i]:
-                    spatial_matches += 1
-                total_cells += 1
-
-        spatial_accuracy = (
-            spatial_matches / total_cells
-            if total_cells > 0 else 0.0
-        )
-    else:
+def compute_spatial_consistency(test_df, y_pred):
+    """
+    Compute spatial consistency as the proportion of cells whose predicted class
+    agrees with the majority predicted class of their 8-neighborhood.
+    """
+    if not {"X", "Y"}.issubset(test_df.columns):
         print("Warning: X/Y columns not found")
-        spatial_accuracy = 0.0
+        return 0.0
 
-    return spatial_accuracy
+    directions = [
+        (-1, -1), (-1, 0), (-1, 1),
+        (0, -1),           (0, 1),
+        (1, -1),  (1, 0),  (1, 1)
+    ]
+
+    pred_map = {}
+    coords = []
+
+    for i in range(len(test_df)):
+        x = int(round(test_df.loc[i, "X"]))
+        y_coord = int(round(test_df.loc[i, "Y"]))
+        coords.append((x, y_coord))
+        pred_map[(x, y_coord)] = int(y_pred[i])
+
+    consistent = 0
+    total = 0
+
+    for i, (x, y_coord) in enumerate(coords):
+        neighbor_preds = []
+
+        for dx, dy in directions:
+            neighbor = (x + dx, y_coord + dy)
+            if neighbor in pred_map:
+                neighbor_preds.append(pred_map[neighbor])
+
+        if not neighbor_preds:
+            continue
+
+        majority_neighbor = max(
+            set(neighbor_preds),
+            key=neighbor_preds.count
+        )
+
+        if int(y_pred[i]) == majority_neighbor:
+            consistent += 1
+
+        total += 1
+
+    return consistent / total if total > 0 else 0.0
 
 
 def main():
-
     if not os.path.exists(DATA_PATH):
         print(f"Error: {DATA_PATH} not found")
         return
@@ -107,7 +110,6 @@ def main():
     y_true = []
 
     for idx, row in test_df.iterrows():
-
         text = row.get("text_des", "")
         if not text:
             continue
@@ -143,7 +145,6 @@ def main():
 
     # Load model
     if not os.path.exists(MODEL_PATH):
-
         print("Training new UrbanMLP...")
 
         mlp = UrbanMLP(
@@ -160,7 +161,6 @@ def main():
         criterion = torch.nn.CrossEntropyLoss()
 
         for epoch in range(50):
-
             mlp.train()
             optimizer.zero_grad()
 
@@ -181,15 +181,15 @@ def main():
         )
 
         print(f"Model saved to {MODEL_PATH}")
+        mlp.eval()
 
     else:
         mlp = UrbanMLP(input_dim=643)
-
-        mlp.load_state_dict(torch.load(MODEL_PATH))
+        mlp.load_state_dict(torch.load(MODEL_PATH, map_location="cpu"))
         mlp.eval()
 
     with torch.no_grad():
-        probs = mlp(X).numpy()
+        probs = mlp(X).cpu().numpy()
 
     y_pred = probs.argmax(axis=1)
 
@@ -214,11 +214,11 @@ def main():
     )
 
     # ====================
-    # AI-10 Spatial Accuracy
+    # AI-10 Spatial Consistency
     # 8-neighbor voting
     # ====================
     test_df = test_df.reset_index(drop=True)
-    spatial_accuracy = compute_spatial_accuracy(y_pred, test_df)
+    spatial_consistency = compute_spatial_consistency(test_df, y_pred)
 
     results = {
         "accuracy": round(float(acc), 4),
@@ -228,8 +228,8 @@ def main():
             for x in f1_per
         ],
         "confusion_matrix": cm.tolist(),
-        "spatial_accuracy": round(
-            float(spatial_accuracy), 4
+        "spatial_consistency": round(
+            float(spatial_consistency), 4
         )
     }
 
@@ -239,7 +239,7 @@ def main():
         json.dump(results, f, indent=2)
 
     print(f"Multi-modal accuracy: {results['accuracy']}")
-    print(f"Spatial accuracy: {results['spatial_accuracy']}")
+    print(f"Spatial consistency: {results['spatial_consistency']}")
 
 
 if __name__ == "__main__":
