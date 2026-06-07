@@ -14,7 +14,7 @@ from fastapi import FastAPI
 
 from app.interfaces.api import router as api_router
 from app.infrastructure.db import engine, Base
-from app.infrastructure.redis_store import RedisJobStore
+from app.infrastructure.redis_store import RedisJobStore,  _redis_store
 from app.models.grid import Grid
 from app.models.job import Job
 
@@ -85,12 +85,11 @@ app.include_router(api_router, prefix="/api/v1")
 
 @app.get("/health")
 def health_check():
-    """
-    Health check endpoint to verify the application status.
-    """
-    return {"status": "ok", "app": "MLLM-Geo-AI-App"}
+    redis_ok = _redis_store.is_available()
 
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
+    return {
+        "status": "ok" if redis_ok else "degraded",
+        "app": "MLLM-Geo-AI-App",
+        "redis": "ok" if redis_ok else "down",
+        "job_store_mode": "redis" if redis_ok else "memory_fallback",
+    }
