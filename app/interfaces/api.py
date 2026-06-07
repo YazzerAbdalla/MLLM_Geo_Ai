@@ -335,11 +335,33 @@ async def evaluate(job_id: str = Form(...), ground_truth_file: UploadFile = File
 # End Point -4 GET /api/v1/evaluate/{job_id}/export FOR  End Point -3
 @router.get("/evaluate/{job_id}/export")
 async def export_evaluation(job_id: str):
+    job = job_store.get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    if job.get("status") != "completed":
+        raise HTTPException(
+            status_code=400,
+            detail="Evaluation is not completed yet."
+        )
+
     csv_bytes = export_evaluation_csv(job_id)
+
+    if not csv_bytes:
+        raise HTTPException(
+            status_code=404,
+            detail="No evaluation data available for export."
+        )
+
+    if isinstance(csv_bytes, str):
+        csv_bytes = csv_bytes.encode("utf-8")
+
     return StreamingResponse(
-        io.BytesIO(csv_bytes),
+        iter([csv_bytes]),
         media_type="text/csv",
-        headers={"Content-Disposition": f'attachment; filename="evaluation_{job_id}.csv"'}
+        headers={
+            "Content-Disposition": f'attachment; filename=\"evaluation_{job_id}.csv\"'
+        }
     )
 
 ### GET for End-Point-5
