@@ -14,7 +14,8 @@ from fastapi import FastAPI
 
 from app.interfaces.api import router as api_router
 from app.infrastructure.db import engine, Base
-from app.infrastructure.redis_store import RedisJobStore,  _redis_store
+from app.infrastructure.redis_store import RedisJobStore
+from app.infrastructure.job_store import _redis_store
 from app.models.grid import Grid
 from app.models.job import Job
 

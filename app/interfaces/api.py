@@ -26,6 +26,7 @@ router = APIRouter()
 try:
     from tasks.load_area import load_area_task
     from tasks.classify import classify_task
+    from tasks.train_mllm import train_mllm_task
     TASKS_AVAILABLE = True
 except ImportError:
     TASKS_AVAILABLE = False
@@ -53,6 +54,7 @@ class MLLMTrainRequest(BaseModel):
     dataset_path: str
     epochs: int = 3
     batch_size: int = 8
+    learning_rate: float = 1e-3
 
 # --- Endpoints ---
 
@@ -343,7 +345,6 @@ async def export_evaluation(job_id: str):
 ### GET for End-Point-5
 @router.get("/mllm/train-status/{job_id}")
 async def get_train_status(job_id: str):
-
     job = job_store.get_job(job_id)
 
     if not job:
@@ -352,16 +353,26 @@ async def get_train_status(job_id: str):
             detail="Job not found"
         )
 
-    return {
+    response = {
         "job_id": job["id"],
         "status": job["status"],
         "step": job["step"],
         "progress": job["progress"],
         "error": job["error"]
     }
+
+    if job["status"] == "completed":
+        response["result_url"] = job.get("result_url")
+
+    return response
 # End Point -5 POST /api/v1/mllm/train
 @router.post("/mllm/train", status_code=202)
 async def train_mllm(request: MLLMTrainRequest):
+    if not TASKS_AVAILABLE:
+        raise HTTPException(
+            status_code=501,
+            detail="Async task pipeline is not available."
+        )
 
     job_id = job_store.create_job("mllm_train")
 
@@ -373,14 +384,17 @@ async def train_mllm(request: MLLMTrainRequest):
             request.model_name,
             request.dataset_path,
             request.epochs,
-            request.batch_size
+            request.batch_size,
+            request.learning_rate,
         ]
     )
 
     job_store.update_job(
         job_id,
         celery_task_id=result.id,
-        status="queued"
+        status="queued",
+        step="queued",
+        progress=0.0
     )
 
     return {
