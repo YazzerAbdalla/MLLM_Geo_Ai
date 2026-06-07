@@ -1,8 +1,9 @@
-import os
+import os, json
 import networkx as nx
 import osmnx as ox
 from shapely.geometry import Point, LineString, mapping
-
+from pathlib import Path
+from fastapi import HTTPException, UploadFile, status
 
 def _extract_graph_from_grid_data(grid_data, max_nodes=500, simplify=True):
     """
@@ -173,3 +174,76 @@ def _graph_to_geojson(graph):
         "type": "FeatureCollection",
         "features": features
     }
+
+# helper for End Point -3 POST /api/v1/evaluate
+
+MAX_GROUND_TRUTH_SIZE = 10 * 1024 * 1024  # 10 MB
+
+ALLOWED_EXTENSIONS = {".json", ".geojson"}
+ALLOWED_CONTENT_TYPES = {
+    "application/json",
+    "application/geo+json",
+    "application/octet-stream",
+}
+
+
+async def validate_ground_truth_file(file: UploadFile) -> None:
+    if not file.filename:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="ground_truth_file is required."
+        )
+
+    suffix = Path(file.filename).suffix.lower()
+    if suffix not in ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail="Only .json or .geojson files are allowed."
+        )
+
+    if file.content_type not in ALLOWED_CONTENT_TYPES:
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail=f"Unsupported content type: {file.content_type}"
+        )
+
+    content = await file.read(MAX_GROUND_TRUTH_SIZE + 1)
+
+    if len(content) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Uploaded file is empty."
+        )
+
+    if len(content) > MAX_GROUND_TRUTH_SIZE:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="ground_truth_file exceeds the maximum allowed size of 10 MB."
+        )
+
+    try:
+        data = json.loads(content.decode("utf-8"))
+    except UnicodeDecodeError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File must be UTF-8 encoded JSON/GeoJSON."
+        )
+    except json.JSONDecodeError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid JSON/GeoJSON file."
+        )
+
+    if not isinstance(data, dict) or data.get("type") != "FeatureCollection":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="ground_truth_file must be a GeoJSON FeatureCollection."
+        )
+
+    if "features" not in data or not isinstance(data["features"], list):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="GeoJSON must contain a valid 'features' array."
+        )
+
+    await file.seek(0)

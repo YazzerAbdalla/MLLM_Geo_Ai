@@ -2,7 +2,7 @@
  * API interface for the MLLM-Geo-AI application.
  * Defines the HTTP endpoints for interacting with the multi-modal classification pipeline.
  """
-from fastapi import APIRouter, HTTPException, Response, UploadFile, File, Form, Query
+from fastapi import APIRouter, HTTPException, Response, UploadFile, File, Form, Query, status
 from fastapi.responses import JSONResponse , StreamingResponse , FileResponse
 from pydantic import BaseModel
 from typing import List, Optional, Literal
@@ -14,7 +14,7 @@ from app.application.export_service import ExportService
 from app.infrastructure.satellite_loader import SatelliteImageLoader
 from app.infrastructure.road_network import RoadNetworkLoader
 from app.domain.spatial_service import generate_grid
-from app.interfaces.helpers import _extract_graph_from_grid_data, _graph_to_geojson
+from app.interfaces.helpers import _extract_graph_from_grid_data, _graph_to_geojson, validate_ground_truth_file
 from app.application.evaluation_service import evaluate_job, export_evaluation_csv
 
 import os,io,uuid,json
@@ -316,10 +316,21 @@ async def get_graph_topology(
 # End Point -3 POST /api/v1/evaluate
 @router.post("/evaluate")
 async def evaluate(job_id: str = Form(...), ground_truth_file: UploadFile = File(...)):
-    result = await evaluate_job(job_id, ground_truth_file)
-    return JSONResponse(content=result)
+    try:
+        await validate_ground_truth_file(ground_truth_file)
 
-# End Point -4 GET /api/v1/evaluate/{job_id}/export
+        result = await evaluate_job(job_id, ground_truth_file)
+        return JSONResponse(content=result)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Evaluation failed: {str(e)}"
+        )
+
+# End Point -4 GET /api/v1/evaluate/{job_id}/export FOR  End Point -3
 @router.get("/evaluate/{job_id}/export")
 async def export_evaluation(job_id: str):
     csv_bytes = export_evaluation_csv(job_id)
@@ -329,7 +340,7 @@ async def export_evaluation(job_id: str):
         headers={"Content-Disposition": f'attachment; filename="evaluation_{job_id}.csv"'}
     )
 
-### helper for End-Point-5
+### GET for End-Point-5
 @router.get("/mllm/train-status/{job_id}")
 async def get_train_status(job_id: str):
 
