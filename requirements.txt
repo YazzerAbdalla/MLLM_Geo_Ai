@@ -19,3 +19,7 @@ celery==5.3.6
 redis==5.0.1
 python-dotenv
 sqlalchemy
+pytest
+redis
+torch-geometric
+earthengine-api
