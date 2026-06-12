@@ -2,15 +2,11 @@
  * API interface for the MLLM-Geo-AI application.
  * Defines the HTTP endpoints for interacting with the multi-modal classification pipeline.
  """
-from fastapi import APIRouter, HTTPException, Response, UploadFile, File, Form
+from fastapi import APIRouter, HTTPException, Response, UploadFile, File, Form, Query, status
 from fastapi.responses import JSONResponse , StreamingResponse , FileResponse
 from pydantic import BaseModel
 from typing import List, Optional, Literal
-import os
-import io
-import uuid
-import geopandas as gpd
-import json
+from celery_app import celery_app
 
 from app.infrastructure.job_store import job_store
 from app.application.fusion_service import MultiModalClassificationUseCase
@@ -18,8 +14,11 @@ from app.application.export_service import ExportService
 from app.infrastructure.satellite_loader import SatelliteImageLoader
 from app.infrastructure.road_network import RoadNetworkLoader
 from app.domain.spatial_service import generate_grid
-from app.interfaces.helpers import _extract_graph_from_grid_data, _graph_to_geojson
+from app.interfaces.helpers import _extract_graph_from_grid_data, _graph_to_geojson, validate_ground_truth_file
 from app.application.evaluation_service import evaluate_job, export_evaluation_csv
+
+import os,io,uuid,json
+import geopandas as gpd
 
 router = APIRouter()
 
@@ -27,6 +26,7 @@ router = APIRouter()
 try:
     from tasks.load_area import load_area_task
     from tasks.classify import classify_task
+    from tasks.train_mllm import train_mllm_task
     TASKS_AVAILABLE = True
 except ImportError:
     TASKS_AVAILABLE = False
@@ -48,6 +48,13 @@ class ClassifyRequest(BaseModel):
 class QueryRequest(BaseModel):
     question: str
     grid_id: str
+
+class MLLMTrainRequest(BaseModel):
+    model_name: str = "tiny-llm"
+    dataset_path: str
+    epochs: int = 3
+    batch_size: int = 8
+    learning_rate: float = 1e-3
 
 # --- Endpoints ---
 
@@ -82,7 +89,15 @@ async def load_area(request: LoadAreaRequest):
         )
 
     from tasks.load_area import load_area_task
-    load_area_task.delay(job_id, bbox, request.grid_size, request.modalities)
+    result = load_area_task.apply_async(
+       args=[job_id, bbox, request.grid_size, request.modalities]
+    )
+
+    job_store.update_job(
+    job_id,
+    celery_task_id=result.id,
+    status="queued"
+    )
 
     return {
         "job_id": job_id,
@@ -134,7 +149,16 @@ async def classify_grid(request: ClassifyRequest):
 
     job_id = job_store.create_job("classify")
     from tasks.classify import classify_task
-    classify_task.delay(job_id, request.grid_id, request.modalities, request.fusion_method)
+    result = classify_task.apply_async(
+        args=[job_id, request.grid_id, request.modalities, request.fusion_method]
+    )
+
+    job_store.update_job(
+    job_id,
+    celery_task_id=result.id,
+    status="queued"
+    )
+
     return {
         "job_id": job_id,
         "status_url": f"/api/v1/classify-status/{job_id}",
@@ -228,6 +252,15 @@ async def cancel_job(job_id: str):
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
 
+    task_id = job.get("celery_task_id")
+
+    if task_id:
+        celery_app.control.revoke(
+            task_id,
+            terminate=True,
+            signal="SIGTERM"
+        )
+
     job_store.update_job(
         job_id,
         status="cancelled",
@@ -244,7 +277,11 @@ async def cancel_job(job_id: str):
 
 # End Point -2 GET /api/v1/grid/{grid_id}/graph-topology
 @router.get("/grid/{grid_id}/graph-topology")
-async def get_graph_topology(grid_id: str):
+async def get_graph_topology(
+    grid_id: str,
+    max_nodes: int = Query(500, ge=1, le=5000),
+    simplify: bool = Query(True),
+):
     try:
         grid_data = job_store.get_grid(grid_id)
     except NotImplementedError:
@@ -256,7 +293,11 @@ async def get_graph_topology(grid_id: str):
     if not grid_data:
         raise HTTPException(status_code=404, detail="Grid not found")
 
-    graph = _extract_graph_from_grid_data(grid_data)
+    graph = _extract_graph_from_grid_data(
+        grid_data,
+        max_nodes=max_nodes,
+        simplify=simplify,
+    )
 
     if graph is None:
         raise HTTPException(
@@ -277,21 +318,113 @@ async def get_graph_topology(grid_id: str):
 # End Point -3 POST /api/v1/evaluate
 @router.post("/evaluate")
 async def evaluate(job_id: str = Form(...), ground_truth_file: UploadFile = File(...)):
-    result = await evaluate_job(job_id, ground_truth_file)
-    return JSONResponse(content=result)
+    try:
+        await validate_ground_truth_file(ground_truth_file)
 
-# End Point -4 GET /api/v1/evaluate/{job_id}/export
+        result = await evaluate_job(job_id, ground_truth_file)
+        return JSONResponse(content=result)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Evaluation failed: {str(e)}"
+        )
+
+# End Point -4 GET /api/v1/evaluate/{job_id}/export FOR  End Point -3
 @router.get("/evaluate/{job_id}/export")
 async def export_evaluation(job_id: str):
+    job = job_store.get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    if job.get("status") != "completed":
+        raise HTTPException(
+            status_code=400,
+            detail="Evaluation is not completed yet."
+        )
+
     csv_bytes = export_evaluation_csv(job_id)
+
+    if not csv_bytes:
+        raise HTTPException(
+            status_code=404,
+            detail="No evaluation data available for export."
+        )
+
+    if isinstance(csv_bytes, str):
+        csv_bytes = csv_bytes.encode("utf-8")
+
     return StreamingResponse(
-        io.BytesIO(csv_bytes),
+        iter([csv_bytes]),
         media_type="text/csv",
-        headers={"Content-Disposition": f'attachment; filename="evaluation_{job_id}.csv"'}
+        headers={
+            "Content-Disposition": f'attachment; filename=\"evaluation_{job_id}.csv\"'
+        }
     )
 
-# End Point -5 POST /api/v1/mllm/train
+### GET for End-Point-5
+@router.get("/mllm/train-status/{job_id}")
+async def get_train_status(job_id: str):
+    job = job_store.get_job(job_id)
 
+    if not job:
+        raise HTTPException(
+            status_code=404,
+            detail="Job not found"
+        )
+
+    response = {
+        "job_id": job["id"],
+        "status": job["status"],
+        "step": job["step"],
+        "progress": job["progress"],
+        "error": job["error"]
+    }
+
+    if job["status"] == "completed":
+        response["result_url"] = job.get("result_url")
+
+    return response
+# End Point -5 POST /api/v1/mllm/train
+@router.post("/mllm/train", status_code=202)
+async def train_mllm(request: MLLMTrainRequest):
+    if not TASKS_AVAILABLE:
+        raise HTTPException(
+            status_code=501,
+            detail="Async task pipeline is not available."
+        )
+
+    job_id = job_store.create_job("mllm_train")
+
+    from tasks.train_mllm import train_mllm_task
+
+    result = train_mllm_task.apply_async(
+        args=[
+            job_id,
+            request.model_name,
+            request.dataset_path,
+            request.epochs,
+            request.batch_size,
+            request.learning_rate,
+        ]
+    )
+
+    job_store.update_job(
+        job_id,
+        celery_task_id=result.id,
+        status="queued",
+        step="queued",
+        progress=0.0
+    )
+
+    return {
+        "job_id": job_id,
+        "status": "queued",
+        "status_url": f"/api/v1/mllm/train-status/{job_id}",
+        "websocket_url": f"ws://localhost:8000/api/v1/ws/progress/{job_id}"
+    }
 
 # End Point -6 POST /api/v1/query (Digital Twin NL)
 @router.post("/query")

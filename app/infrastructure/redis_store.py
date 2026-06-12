@@ -1,8 +1,8 @@
 """
  * Redis JobStore for tracking asynchronous task progress.
  """
-import redis
 import os
+import redis
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -17,55 +17,77 @@ class RedisJobStore:
     """
     def __init__(self, url: str = None, optional: bool = True):
         global REDIS_AVAILABLE
-        if url is None:
-            url = os.getenv("REDIS_URL", "redis://localhost:6379")
+
+        self.r = None
+        self.url = url or os.getenv("REDIS_URL", "redis://localhost:6379")
+
         try:
-            self.r = redis.from_url(url, decode_responses=True)
+            self.r = redis.from_url(self.url, decode_responses=True)
             self.r.ping()
             REDIS_AVAILABLE = True
-            print(f"Redis connected: {url}")
+            print(f"Redis connected: {self.url}")
         except Exception as e:
-            if not optional:
-                raise RuntimeError(f"Cannot connect to Redis at {url}. Is Redis running?")
             REDIS_AVAILABLE = False
+            self.r = None
+
+            if not optional:
+                raise RuntimeError(
+                    f"Cannot connect to Redis at {self.url}. Is Redis running?"
+                ) from e
+
             print(f"WARNING: Redis unavailable: {e}")
             print("         Some features limited without Redis.")
+
+    def is_available(self) -> bool:
+        """
+         * Check whether Redis is currently available.
+        """
+        if self.r is None:
+            return False
+        try:
+            return bool(self.r.ping())
+        except Exception:
+            return False
 
     def create_job(self, job_id: str, job_type: str):
         """
          * Create a new job.
         """
-        if not REDIS_AVAILABLE:
+        if not self.is_available():
             return
+
         self.r.set(f"job:{job_id}:status", "pending")
         self.r.set(f"job:{job_id}:progress", "0.0")
         self.r.set(f"job:{job_id}:step", "initialized")
         self.r.set(f"job:{job_id}:type", job_type)
 
     def set_status(self, job_id: str, status: str):
-        if not REDIS_AVAILABLE:
+        if not self.is_available():
             return
         self.r.set(f"job:{job_id}:status", status)
 
     def set_progress(self, job_id: str, progress: float, step: str):
-        if not REDIS_AVAILABLE:
+        if not self.is_available():
             return
         self.r.set(f"job:{job_id}:progress", str(round(progress, 4)))
         self.r.set(f"job:{job_id}:step", step)
 
     def update_job(self, job_id: str, **kwargs):
-        if not REDIS_AVAILABLE:
+        if not self.is_available():
             return
+
         for key, value in kwargs.items():
             full_key = f"job:{job_id}:{key}"
             self.r.set(full_key, str(value))
 
     def get_job(self, job_id: str):
-        if not REDIS_AVAILABLE:
+        if not self.is_available():
             return None
+
         status = self.r.get(f"job:{job_id}:status")
         if not status:
             return None
+
         return {
             "id": job_id,
             "type": self.r.get(f"job:{job_id}:type"),
@@ -75,11 +97,15 @@ class RedisJobStore:
             "error": self.r.get(f"job:{job_id}:error"),
             "result_url": self.r.get(f"job:{job_id}:result_url"),
             "grid_id": self.r.get(f"job:{job_id}:grid_id"),
+            "celery_task_id": self.r.get(f"job:{job_id}:celery_task_id"),
         }
 
     def delete_job(self, job_id: str):
-        if not REDIS_AVAILABLE:
+        if not self.is_available():
             return
+
         keys = self.r.keys(f"job:{job_id}:*")
         if keys:
             self.r.delete(*keys)
+
+            

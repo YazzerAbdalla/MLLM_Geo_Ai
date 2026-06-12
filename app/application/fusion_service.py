@@ -166,7 +166,11 @@ class MultiModalClassificationUseCase:
                         "avg_degree",
                         0.0
                     ),
-                    "geometry": cell.geometry
+                    "geometry": cell.geometry,
+
+                    # Explainability defaults
+                     "text_embedding_norm": 0.0,
+                     "graph_embedding_norm": 0.0
                 })
 
             # ==================================================
@@ -387,14 +391,11 @@ class MultiModalClassificationUseCase:
                     # ==================================================
 
                     "text_embedding_norm":
-                        cell_info[
-                            "text_embedding_norm"
-                        ],
-
+                        float(cell_info.get(
+                            "text_embedding_norm", 0.0)),
                     "graph_embedding_norm":
-                        cell_info[
-                            "graph_embedding_norm"
-                        ],
+                        float(cell_info.get(
+                            "graph_embedding_norm", 0.0)),
 
                     "satellite_thumbnail_url":
                         f"/api/v1/thumbnails/"

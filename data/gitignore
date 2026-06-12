@@ -1,0 +1,8 @@
+data/grids/*.geojson
+data/results/*.geojson
+data/sat_images/*.png
+data/sat_images/*.jpg
+data/sat_images/*.jpeg
+data/models/trained/*.pt
+data/models/trained/*.pth
+data/models/trained/*.ckpt
