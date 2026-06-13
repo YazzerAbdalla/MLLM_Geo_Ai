@@ -51,6 +51,21 @@ class GeoQueryEngine:
             ]
         }
 
+    # -------------------------
+    # LANGUAGE DETECTION
+    # -------------------------
+    def detect_language(self, question: str):
+
+        for ch in question:
+
+            if "\u0600" <= ch <= "\u06FF":
+                return "ar"
+
+        return "en"
+
+    # -------------------------
+    # QUERY TYPE DETECTION
+    # -------------------------
     def detect_query_type(self, question: str):
 
         q = question.lower()
@@ -72,14 +87,25 @@ class GeoQueryEngine:
 
         return "unknown"
 
+    # -------------------------
+    # MAIN QUERY
+    # -------------------------
     def query(self, question: str):
 
         query_type = self.detect_query_type(
             question
         )
 
+        lang = self.detect_language(
+            question
+        )
+
+        rtl = lang == "ar"
+
         response = {
             "query_type": query_type,
+            "language": lang,
+            "rtl": rtl,
             "cell_ids": [],
             "explanation": "",
             "explanation_ar": ""
