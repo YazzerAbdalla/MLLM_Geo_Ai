@@ -36,6 +36,7 @@ except ImportError:
 class LoadAreaRequest(BaseModel):
     bbox: Optional[List[float]] = None
     place_name: Optional[str] = None
+    area_geometry: Optional[dict] = None
     grid_size: int = 500
     modalities: List[str] = ["poi", "image", "graph"]
 
@@ -74,13 +75,25 @@ async def load_area(request: LoadAreaRequest):
 
     job_id = job_store.create_job("load")
 
-    bbox = request.bbox
-    if not bbox:
-        bbox = [31.10, 29.90, 31.30, 30.10]
-
-    min_x, min_y, max_x, max_y = bbox
     from app.domain.spatial_service import generate_grid
-    grid_gdf = generate_grid((min_x, min_y, max_x, max_y), cell_size_m=request.grid_size)
+
+    if request.area_geometry:
+        from shapely.geometry import shape
+        try:
+            poly = shape(request.area_geometry)
+            min_x, min_y, max_x, max_y = poly.bounds
+            bbox = [min_x, min_y, max_x, max_y]
+            grid_gdf = generate_grid((min_x, min_y, max_x, max_y), cell_size_m=request.grid_size)
+            grid_gdf = grid_gdf[grid_gdf.geometry.intersects(poly)]
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Invalid area_geometry: {str(e)}")
+    else:
+        bbox = request.bbox
+        if not bbox:
+            bbox = [31.10, 29.90, 31.30, 30.10]
+        min_x, min_y, max_x, max_y = bbox
+        grid_gdf = generate_grid((min_x, min_y, max_x, max_y), cell_size_m=request.grid_size)
+
     num_cells = len(grid_gdf)
 
     if num_cells > 500:
@@ -91,13 +104,13 @@ async def load_area(request: LoadAreaRequest):
 
     from tasks.load_area import load_area_task
     result = load_area_task.apply_async(
-       args=[job_id, bbox, request.grid_size, request.modalities]
+        args=[job_id, bbox, request.grid_size, request.modalities]
     )
 
     job_store.update_job(
-    job_id,
-    celery_task_id=result.id,
-    status="queued"
+        job_id,
+        celery_task_id=result.id,
+        status="queued"
     )
 
     return {
@@ -148,6 +161,61 @@ async def get_grid_preview(grid_id: str):
 
     geojson_str = grid_data["gdf"].to_json()
     return Response(content=geojson_str, media_type="application/geo+json")
+
+@router.get("/grid/{grid_id}/details")
+async def get_grid_details(grid_id: str):
+    grid_data = job_store.get_grid(grid_id)
+    if not grid_data:
+        raise HTTPException(status_code=404, detail="Grid not found")
+
+    gdf = grid_data["gdf"]
+    bbox = grid_data.get("bbox", [])
+
+    cell_count = len(gdf)
+    road_density = gdf["total_length"].mean() if "total_length" in gdf.columns else 0.0
+
+    poi_count = 0
+    if "poi_count" in gdf.columns:
+        poi_count = int(gdf["poi_count"].sum())
+
+    nodes = 0
+    if "node_count" in gdf.columns:
+        nodes = int(gdf["node_count"].sum())
+
+    return {
+        "grid_id": grid_id,
+        "bbox": bbox,
+        "cell_count": cell_count,
+        "road_density": float(road_density),
+        "poi_count": poi_count,
+        "graph_stats": {
+            "nodes": nodes,
+            "edges": 0
+        }
+    }
+
+@router.get("/grid/{grid_id}/pois")
+async def get_grid_pois(grid_id: str):
+    import os
+    grid_data = job_store.get_grid(grid_id)
+    if not grid_data:
+        raise HTTPException(status_code=404, detail="Grid not found")
+
+    pois_path = f"data/raw/pois_{grid_id}.geojson"
+    if os.path.exists(pois_path):
+        import geopandas as gpd
+        pois_gdf = gpd.read_file(pois_path)
+        pois = []
+        for i, row in pois_gdf.iterrows():
+            pois.append({
+                "id": str(i),
+                "name": row.get("name", "Unknown"),
+                "category": row.get("amenity", "Unknown"),
+                "lat": row.geometry.y,
+                "lng": row.geometry.x
+            })
+        return pois
+    return []
 
 @router.post("/classify", status_code=202)
 async def classify_grid(request: ClassifyRequest):
@@ -444,7 +512,15 @@ async def train_mllm(request: MLLMTrainRequest):
 # End Point -6 POST /api/v1/query (Digital Twin NL)
 @router.post("/query")
 async def natural_language_query(body: QueryRequest):
-    raise HTTPException(
-        status_code=501,
-        detail="Natural language query is planned for v2 and not yet implemented."
-    )
+    if not body.question.strip():
+        raise HTTPException(status_code=400, detail="Question cannot be empty")
+
+    grid_data = job_store.get_grid(body.grid_id)
+    if not grid_data:
+        raise HTTPException(status_code=404, detail="Grid not found")
+
+    return {
+        "answer": f"This is a stub answer for your query: '{body.question}' regarding grid {body.grid_id}.",
+        "query_type": "general",
+        "confidence": 0.85
+    }
