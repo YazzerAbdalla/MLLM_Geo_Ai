@@ -2,7 +2,7 @@
  * API interface for the MLLM-Geo-AI application.
  * Defines the HTTP endpoints for interacting with the multi-modal classification pipeline.
  """
-from fastapi import APIRouter, HTTPException, Response, UploadFile, File, Form, Query, status
+from fastapi import APIRouter, HTTPException, Response, UploadFile, File, Form, Query, status, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse , StreamingResponse , FileResponse
 from pydantic import BaseModel
 from typing import List, Optional, Literal
@@ -19,6 +19,7 @@ from app.application.evaluation_service import evaluate_job, export_evaluation_c
 
 import os,io,uuid,json
 import geopandas as gpd
+from app.interfaces.websocket_manager import manager
 
 router = APIRouter()
 
@@ -124,6 +125,20 @@ async def get_area_status(job_id: str):
         response["geojson_preview_url"] = f"/api/v1/grid/{job.get('grid_id')}/preview"
         
     return response
+
+@router.websocket("/ws/progress/{job_id}")
+async def websocket_progress_endpoint(websocket: WebSocket, job_id: str):
+    job = job_store.get_job(job_id)
+    if not job:
+        await websocket.close(code=4004, reason="Job not found")
+        return
+
+    await manager.connect(websocket, job_id)
+    try:
+        while True:
+            data = await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(websocket, job_id)
 
 @router.get("/grid/{grid_id}/preview")
 async def get_grid_preview(grid_id: str):
