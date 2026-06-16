@@ -363,6 +363,8 @@ class MultiModalClassificationUseCase:
                 # Final Result Object
                 # ==================================================
 
+                geometry = cell_info["geometry"]
+
                 results.append({
 
                     "cell_id": cell_id,
@@ -370,25 +372,31 @@ class MultiModalClassificationUseCase:
                     "dominant_class":
                         classes[dominant_idx],
 
+                    "confidence":
+                        float(p[dominant_idx]),
+
                     "confidences": {
-                        "Residential": float(p[0]),
-                        "Commercial": float(p[1]),
-                        "Industrial": float(p[2])
+                        "residential": float(p[0]),
+                        "commercial": float(p[1]),
+                        "industrial": float(p[2])
                     },
 
-                    "road_density_km_per_km2":
+                    "road_density":
                         float(road_density),
 
                     "node_count":
                         int(node_count),
 
+                    "degree_centrality": 0.0,
+
+                    "clustering_coeff": 0.0,
+
+                    "total_road_length_m":
+                        float(cell_info.get(
+                            "total_length", 0.0)),
+
                     "poi_top_categories":
                         poi_top,
-
-                    # ==================================================
-                    # AI-9 (FR-29)
-                    # Explainability Metrics
-                    # ==================================================
 
                     "text_embedding_norm":
                         float(cell_info.get(
@@ -396,6 +404,17 @@ class MultiModalClassificationUseCase:
                     "graph_embedding_norm":
                         float(cell_info.get(
                             "graph_embedding_norm", 0.0)),
+
+                    "geometry":
+                        getattr(geometry,
+                                "__geo_interface__",
+                                {"type": "Polygon",
+                                 "coordinates": []}),
+
+                    "centroid": (
+                        float(geometry.centroid.y),
+                        float(geometry.centroid.x)
+                    ) if hasattr(geometry, "centroid") else (0.0, 0.0),
 
                     "satellite_thumbnail_url":
                         f"/api/v1/thumbnails/"
