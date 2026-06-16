@@ -55,6 +55,10 @@ This file tracks the status of all project features and work.
 ### Student 4 — Training Pipeline
 - [ ] AI-7: Pre-download Cairo road network (data/raw/roads.graphml)
 
+### Backend API Audit
+- [x] Complete Backend API Contract & Implementation Audit
+- [x] Generate BACKEND_API_AUDIT.md
+
 ### General Documentation
 - [ ] Rewrite README.md with full setup
 - [ ] Create docs/advanced_workflows.md
@@ -80,9 +84,9 @@ These features are planned for future implementation:
 
 ### API Features
 - [ ] Async task pipeline (Celery) - tasks/ module
-- [ ] Natural language query (v2)
-- [ ] WebSocket progress updates
-- [ ] Redis job tracking (when Redis available)
+- [x] Natural language query (v2) stub
+- [x] WebSocket progress updates
+- [x] Redis job tracking (when Redis available)
 
 ### Data Features
 - [ ] Real satellite imagery from GEE
