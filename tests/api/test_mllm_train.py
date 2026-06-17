@@ -1,6 +1,7 @@
 import pytest
 
 def test_train_start(client, monkeypatch):
+    monkeypatch.setattr("os.path.exists", lambda path: True)
     response = client.post("/api/v1/mllm/train", json={
         "model_name": "tiny-llm",
         "dataset_path": "data/dataset.csv"

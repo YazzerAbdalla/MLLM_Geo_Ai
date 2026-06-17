@@ -23,7 +23,7 @@ def classify_task(self, job_id: str, grid_id: str, modalities: list = None, fusi
 
         from app.application.fusion_service import MultiModalClassificationUseCase
         use_case = MultiModalClassificationUseCase()
-        use_case.execute(job_id, grid_id)
+        use_case.execute(job_id, grid_id, fusion_method=fusion_method)
 
         store.update_job(job_id, status="completed", step="done", progress=1.0)
 

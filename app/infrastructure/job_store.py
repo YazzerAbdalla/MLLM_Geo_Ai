@@ -38,6 +38,7 @@ class JobStore:
             "result_url": None,
             "grid_id": None,
             "celery_task_id": None,
+            "num_cells": 0,
         }
         _MEMORY_JOBS[job_id] = memory_job
 

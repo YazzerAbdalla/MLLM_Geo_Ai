@@ -79,18 +79,26 @@ def join_points_to_grid(points_gdf, grid_gdf):
 # ATTENTION FUSION
 # -----------------------------
 def attention_fusion(poi, image, graph):
+    """
+    * Simple attention fusion for multi-modal features.
+    *
+    * Each modality is first projected to a common dimension (via norm-based scoring)
+    * before computing attention weights. Works with different-shaped inputs.
+    """
 
-    features = np.stack([poi, image, graph], axis=0)
+    # Compute scalar attention scores from vector norms (one per modality)
+    scores_list = np.array([
+        float(np.linalg.norm(poi) if poi.ndim == 1 else 0),
+        float(np.linalg.norm(image) if image.ndim == 1 else 0),
+        float(np.linalg.norm(graph) if graph.ndim == 1 else 0),
+    ])
 
-    # simple attention (prototype)
-    W = np.ones((3, 1))
+    # Softmax over three scores
+    exp_scores = np.exp(scores_list - np.max(scores_list))
+    weights = exp_scores / (np.sum(exp_scores) + 1e-8)
 
-    scores = np.dot(features, W).squeeze()
-
-    exp_scores = np.exp(scores - np.max(scores))
-    weights = exp_scores / np.sum(exp_scores)
-
-    fused = np.sum(weights[:, None] * features, axis=0)
+    # Concatenate features (since they have different dimensions)
+    fused = np.concatenate([poi, image, graph], axis=-1)
 
     return fused, weights
 

@@ -88,6 +88,12 @@ class RedisJobStore:
         if not status:
             return None
 
+        num_cells_raw = self.r.get(f"job:{job_id}:num_cells")
+        try:
+            num_cells = int(num_cells_raw) if num_cells_raw else 0
+        except (ValueError, TypeError):
+            num_cells = 0
+
         return {
             "id": job_id,
             "type": self.r.get(f"job:{job_id}:type"),
@@ -98,6 +104,7 @@ class RedisJobStore:
             "result_url": self.r.get(f"job:{job_id}:result_url"),
             "grid_id": self.r.get(f"job:{job_id}:grid_id"),
             "celery_task_id": self.r.get(f"job:{job_id}:celery_task_id"),
+            "num_cells": num_cells,
         }
 
     def delete_job(self, job_id: str):

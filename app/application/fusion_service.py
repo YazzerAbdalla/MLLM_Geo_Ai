@@ -78,7 +78,7 @@ class MultiModalClassificationUseCase:
 
         return path
 
-    def execute(self, job_id: str, grid_id: str):
+    def execute(self, job_id: str, grid_id: str, fusion_method: str = "concat"):
         """
          * Executes the complete multi-modal classification pipeline.
          *
@@ -256,10 +256,12 @@ class MultiModalClassificationUseCase:
                 # 4. Multimodal Fusion
                 # ----------------------------------------------
 
+                use_attention = (fusion_method == "attention")
                 fused = create_multimodal_feature(
                     poi_emb,
                     img_emb,
-                    graph_feat
+                    graph_feat,
+                    use_attention=use_attention
                 )
 
                 features.append(fused)
@@ -448,6 +450,7 @@ class MultiModalClassificationUseCase:
             """
              * Handles pipeline failures.
              * Updates job status to failed.
+             * Re-raises so the caller never overwrites "failed" with "completed".
              """
 
             job_store.update_job(
@@ -455,3 +458,4 @@ class MultiModalClassificationUseCase:
                 status="failed",
                 error=str(e)
             )
+            raise

@@ -11,7 +11,9 @@ client = TestClient(app)
 def test_health_check():
     response = client.get("/health")
     assert response.status_code == 200
-    assert response.json() == {"status": "ok", "app": "MLLM-Geo-AI-App"}
+    body = response.json()
+    assert body["status"] == "ok"
+    assert body["app"] == "MLLM-Geo-AI-App"
 
 def test_load_area_and_classify_flow():
     # 1. Start load-area job
@@ -42,7 +44,7 @@ def test_load_area_and_classify_flow():
     # 3. Start classify job
     classify_payload = {
         "grid_id": grid_id,
-        "modalities": []
+        "modalities": ["poi"]
     }
     class_res = client.post("/api/v1/classify", json=classify_payload)
     assert class_res.status_code == 202

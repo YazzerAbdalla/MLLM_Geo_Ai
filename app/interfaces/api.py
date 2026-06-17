@@ -230,6 +230,12 @@ async def classify_grid(request: ClassifyRequest):
             }
         )
 
+    if not request.modalities:
+        raise HTTPException(
+            status_code=400,
+            detail="At least one modality required. Use ['poi'], ['image'], ['graph'], or a combination."
+        )
+
     job_id = job_store.create_job("classify")
     from tasks.classify import classify_task
     result = classify_task.apply_async(
@@ -284,12 +290,23 @@ async def get_classification_result(job_id: str):
 @router.get("/export/{job_id}")
 async def export_results(job_id: str, format: str = "geojson"):
     job = job_store.get_job(job_id)
-    if not job or job["status"] != "completed":
-        raise HTTPException(status_code=404, detail="Job not found or not completed")
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    if job["status"] == "failed":
+        raise HTTPException(status_code=400, detail="Cannot export: classification job failed")
+    if job["status"] != "completed":
+        raise HTTPException(status_code=400, detail=f"Cannot export: job status is '{job['status']}' (must be 'completed')")
 
     result_path = f"data/results/{job_id}.geojson"
     if not os.path.exists(result_path):
-        raise HTTPException(status_code=404, detail="Result file not found")
+        # Try fallback: check result_data in job
+        result_data = job.get("result_data")
+        if result_data:
+            os.makedirs("data/results", exist_ok=True)
+            with open(result_path, "w") as f:
+                json.dump({"type": "FeatureCollection", "features": result_data}, f)
+        else:
+            raise HTTPException(status_code=404, detail="Result file not found and no result data available")
 
     svc = ExportService()
     if format == "geojson":
@@ -478,6 +495,25 @@ async def train_mllm(request: MLLMTrainRequest):
             status_code=501,
             detail="Async task pipeline is not available."
         )
+
+    # Validate dataset BEFORE queueing
+    if not request.dataset_path:
+        raise HTTPException(status_code=400, detail="dataset_path is required")
+    if not os.path.exists(request.dataset_path):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Dataset not found: {request.dataset_path}"
+        )
+    valid_extensions = (".csv", ".json", ".geojson")
+    if not request.dataset_path.lower().endswith(valid_extensions):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported dataset format. Supported: {valid_extensions}"
+        )
+    if request.epochs < 1 or request.epochs > 100:
+        raise HTTPException(status_code=400, detail="epochs must be between 1 and 100")
+    if request.batch_size < 1 or request.batch_size > 1024:
+        raise HTTPException(status_code=400, detail="batch_size must be between 1 and 1024")
 
     job_id = job_store.create_job("mllm_train")
 
