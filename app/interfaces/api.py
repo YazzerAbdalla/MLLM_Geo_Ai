@@ -77,14 +77,13 @@ async def load_area(request: LoadAreaRequest):
 
     from app.domain.spatial_service import generate_grid
 
+    # Calculate cell count BEFORE expensive grid generation (DEF-007)
     if request.area_geometry:
         from shapely.geometry import shape
         try:
             poly = shape(request.area_geometry)
             min_x, min_y, max_x, max_y = poly.bounds
             bbox = [min_x, min_y, max_x, max_y]
-            grid_gdf = generate_grid((min_x, min_y, max_x, max_y), cell_size_m=request.grid_size)
-            grid_gdf = grid_gdf[grid_gdf.geometry.intersects(poly)]
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Invalid area_geometry: {str(e)}")
     else:
@@ -92,15 +91,26 @@ async def load_area(request: LoadAreaRequest):
         if not bbox:
             bbox = [31.10, 29.90, 31.30, 30.10]
         min_x, min_y, max_x, max_y = bbox
+
+    # Estimate cell count before generating grid
+    import math
+    cell_deg = request.grid_size / 111000.0
+    est_cols = int(math.ceil((max_x - min_x) / cell_deg))
+    est_rows = int(math.ceil((max_y - min_y) / cell_deg))
+    est_cells = est_cols * est_rows
+    if est_cells > 500:
+        raise HTTPException(
+            status_code=413,
+            detail=f"Area too large: estimated {est_cells} cells exceed the 500-cell limit. Zoom in or increase grid_size."
+        )
+
+    if request.area_geometry:
+        grid_gdf = generate_grid((min_x, min_y, max_x, max_y), cell_size_m=request.grid_size)
+        grid_gdf = grid_gdf[grid_gdf.geometry.intersects(poly)]
+    else:
         grid_gdf = generate_grid((min_x, min_y, max_x, max_y), cell_size_m=request.grid_size)
 
     num_cells = len(grid_gdf)
-
-    if num_cells > 500:
-        raise HTTPException(
-            status_code=413,
-            detail=f"Area too large: {num_cells} cells exceed the 500-cell limit. Zoom in or increase grid_size."
-        )
 
     from tasks.load_area import load_area_task
     result = load_area_task.apply_async(
@@ -133,9 +143,24 @@ async def get_area_status(job_id: str):
         "error": job["error"]
     }
     if job["status"] == "completed":
-        response["grid_id"] = job.get("grid_id")
-        response["num_cells"] = job.get("num_cells", 0)
-        response["geojson_preview_url"] = f"/api/v1/grid/{job.get('grid_id')}/preview"
+        grid_id = job.get("grid_id")
+        response["grid_id"] = grid_id
+
+        # Query Grid SQLite table for authoritative num_cells (DEF-013)
+        from app.infrastructure.db import SessionLocal
+        from app.models.grid import Grid
+        try:
+            db = SessionLocal()
+            db_grid = db.query(Grid).filter(Grid.id == grid_id).first()
+            if db_grid and db_grid.num_cells is not None:
+                response["num_cells"] = db_grid.num_cells
+            else:
+                response["num_cells"] = job.get("num_cells", 0)
+            db.close()
+        except Exception:
+            response["num_cells"] = job.get("num_cells", 0)
+
+        response["geojson_preview_url"] = f"/api/v1/grid/{grid_id}/preview"
         
     return response
 
@@ -234,6 +259,14 @@ async def classify_grid(request: ClassifyRequest):
         raise HTTPException(
             status_code=400,
             detail="At least one modality required. Use ['poi'], ['image'], ['graph'], or a combination."
+        )
+
+    # Validate grid exists before queueing (DEF-008)
+    grid_data = job_store.get_grid(request.grid_id)
+    if not grid_data:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Grid not found: {request.grid_id}"
         )
 
     job_id = job_store.create_job("classify")

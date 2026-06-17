@@ -19,7 +19,7 @@ GROUND_TRUTH_LABEL_CANDIDATES = [
 ]
 
 PRED_LABEL_CANDIDATES = [
-    "predicted_label", "prediction", "pred_label", "class",
+    "dominant_class", "predicted_label", "prediction", "pred_label", "class",
     "label", "land_use", "landuse", "category"
 ]
 

@@ -314,7 +314,7 @@ class MultiModalClassificationUseCase:
                 )
 
                 # ----------------------------------------------
-                # Road Density Calculation
+                # Road Density Calculation (DEF-014: use projected CRS)
                 # ----------------------------------------------
 
                 node_count = (
@@ -325,9 +325,18 @@ class MultiModalClassificationUseCase:
                     cell_info["total_length"]
                 )
 
-                cell_area_m2 = (
-                    cell_info["geometry"].area
-                )
+                from shapely.geometry import shape
+                geom = cell_info["geometry"]
+                if hasattr(geom, "area"):
+                    try:
+                        import geopandas as gpd
+                        gdf_proj = gpd.GeoDataFrame(geometry=[geom], crs="EPSG:4326")
+                        gdf_proj = gdf_proj.to_crs("EPSG:3857")
+                        cell_area_m2 = gdf_proj.geometry.area.iloc[0]
+                    except Exception:
+                        cell_area_m2 = geom.area
+                else:
+                    cell_area_m2 = 0.0
 
                 cell_area_km2 = (
                     cell_area_m2 / 1e6
