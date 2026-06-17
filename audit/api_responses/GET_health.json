@@ -1,0 +1,10 @@
+{
+  "status": 200,
+  "body": {
+    "status": "ok",
+    "app": "MLLM-Geo-AI-App",
+    "redis": "ok",
+    "job_store_mode": "redis"
+  },
+  "duration": 2.04421329498291
+}

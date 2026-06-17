@@ -1,0 +1,17 @@
+{
+  "status": 422,
+  "body": {
+    "detail": [
+      {
+        "type": "list_type",
+        "loc": [
+          "body",
+          "bbox"
+        ],
+        "msg": "Input should be a valid list",
+        "input": "invalid"
+      }
+    ]
+  },
+  "duration": 2.2621827125549316
+}

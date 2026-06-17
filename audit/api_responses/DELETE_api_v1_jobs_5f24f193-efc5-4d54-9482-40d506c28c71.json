@@ -1,0 +1,9 @@
+{
+  "status": 200,
+  "body": {
+    "job_id": "5f24f193-efc5-4d54-9482-40d506c28c71",
+    "status": "cancelled",
+    "message": "Job cancelled successfully"
+  },
+  "duration": 2.3025565147399902
+}

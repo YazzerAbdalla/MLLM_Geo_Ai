@@ -94,3 +94,7 @@ def health_check():
         "redis": "ok" if redis_ok else "down",
         "job_store_mode": "redis" if redis_ok else "memory_fallback",
     }
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8000)

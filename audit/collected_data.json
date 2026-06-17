@@ -1,0 +1,158 @@
+{
+  "db_grid_count": 18,
+  "db_tables": {
+    "grids": 18,
+    "jobs": 0
+  },
+  "api_responses": {
+    "DELETE_api_v1_jobs_5f24f193-efc5-4d54-9482-40d506c28c71": {
+      "status": 200,
+      "duration": 2.3025565147399902
+    },
+    "GET_api_v1_area-status_896481c9-13db-4ebd-8d14-9d53b2c": {
+      "status": 200,
+      "duration": 2.0117082595825195
+    },
+    "GET_api_v1_classification-result_2320e5f9-6081-4146-96": {
+      "status": 200,
+      "duration": 2.0121355056762695
+    },
+    "GET_api_v1_classify-status_2320e5f9-6081-4146-96ff-c33": {
+      "status": 200,
+      "duration": 2.011967420578003
+    },
+    "GET_api_v1_classify-status_5f24f193-efc5-4d54-9482-40d": {
+      "status": 200,
+      "duration": 2.00813364982605
+    },
+    "GET_api_v1_export_2320e5f9-6081-4146-96ff-c330e6592028": {
+      "status": 404,
+      "duration": 2.012235641479492
+    },
+    "GET_api_v1_grid_grid_896481c9_details": {
+      "status": 200,
+      "duration": 2.6945598125457764
+    },
+    "GET_api_v1_grid_grid_896481c9_graph-topology_max_nodes": {
+      "status": 200,
+      "duration": 44.96229314804077
+    },
+    "GET_api_v1_grid_grid_896481c9_pois": {
+      "status": 200,
+      "duration": 2.008734941482544
+    },
+    "GET_api_v1_jobs_invalid_job_id": {
+      "status": 405,
+      "duration": 2.0058634281158447
+    },
+    "GET_health": {
+      "status": 200,
+      "duration": 2.04421329498291
+    },
+    "POST_api_v1_classify": {
+      "status": 202,
+      "duration": 2.012263536453247
+    },
+    "POST_api_v1_load-area": {
+      "status": 422,
+      "duration": 2.2621827125549316
+    }
+  },
+  "result_files": {
+    "17d860b1-32a9-4881-b022-60fd968a7d49": {
+      "features": 1
+    },
+    "35978685-7a08-4482-a030-56a4ad98db62": {
+      "features": 1
+    },
+    "56b8fe69-a7fd-4a21-b7ea-29bb7383149e": {
+      "features": 1
+    },
+    "7d68623b-aa73-4dd4-86b1-97677972eb29": {
+      "features": 1
+    },
+    "80f2bf26-cd82-44a9-9c1f-20b455d53912": {
+      "features": 36
+    },
+    "84c91f5a-6bde-4cd0-950d-18ef36b3e231": {
+      "features": 36
+    },
+    "a3106cdb-e977-4d8c-9497-2c1e2a806832": {
+      "features": 1
+    },
+    "d1e6cc9d-3a2c-47d6-baaf-e8e7549202f6": {
+      "features": 36
+    },
+    "ddc66a77-67c6-4008-898a-def8c153a279": {
+      "features": 36
+    },
+    "f3dfefeb-20ff-41ec-a504-057328a26d50": {
+      "features": 1
+    },
+    "f6d07c21-d2c4-44eb-8ac2-813a87ddb643": {
+      "features": 36
+    }
+  },
+  "grid_files": {
+    "grid_1c2671d3": {
+      "size_bytes": 8149
+    },
+    "grid_2051a7fb": {
+      "size_bytes": 11736
+    },
+    "grid_39564ef3": {
+      "size_bytes": 11693
+    },
+    "grid_39e1a266": {
+      "size_bytes": 11693
+    },
+    "grid_411cc285": {
+      "size_bytes": 11693
+    },
+    "grid_44a78006": {
+      "size_bytes": 118944
+    },
+    "grid_51f3a3ce": {
+      "size_bytes": 8149
+    },
+    "grid_5205fe8e": {
+      "size_bytes": 11736
+    },
+    "grid_78d2bf6b": {
+      "size_bytes": 11736
+    },
+    "grid_7cb26e37": {
+      "size_bytes": 8149
+    },
+    "grid_7e126dfb": {
+      "size_bytes": 11736
+    },
+    "grid_896481c9": {
+      "size_bytes": 8149
+    },
+    "grid_89dbee86": {
+      "size_bytes": 105703
+    },
+    "grid_b2fb5032": {
+      "size_bytes": 105703
+    },
+    "grid_bb512939": {
+      "size_bytes": 8149
+    },
+    "grid_c63a67d0": {
+      "size_bytes": 11736
+    },
+    "grid_e2545044": {
+      "size_bytes": 8149
+    },
+    "grid_e40935ef": {
+      "size_bytes": 8149
+    },
+    "grid_f3d535da": {
+      "size_bytes": 11736
+    }
+  },
+  "result_count": 11,
+  "grid_file_count": 19,
+  "response_count": 13
+}

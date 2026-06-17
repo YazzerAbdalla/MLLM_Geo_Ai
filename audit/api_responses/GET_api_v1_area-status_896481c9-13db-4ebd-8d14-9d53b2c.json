@@ -1,0 +1,14 @@
+{
+  "status": 200,
+  "body": {
+    "job_id": "896481c9-13db-4ebd-8d14-9d53b2c6433a",
+    "status": "completed",
+    "step": "done",
+    "progress": 1.0,
+    "error": null,
+    "grid_id": "grid_896481c9",
+    "num_cells": 0,
+    "geojson_preview_url": "/api/v1/grid/grid_896481c9/preview"
+  },
+  "duration": 2.0117082595825195
+}

@@ -109,6 +109,12 @@ If you see the file, the roads graph is ready!
 ```bash
 python -m app.main
 ```
+### Start the celery workers in one terminal listening to the three queues 
+```bash
+celery -A celery_app worker --loglevel=info --pool=solo -Q cpu,gpu,celery
+```
+
+### Or in the separate terminals: 
 
 ### Step 3b: Run the Worker for cpu queue
 

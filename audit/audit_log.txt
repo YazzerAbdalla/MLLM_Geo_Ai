@@ -1,0 +1,10 @@
+Starting API Audit...
+GET /health: 200 in 2.044s
+POST /load-area: 202
+Got Job ID: 896481c9-13db-4ebd-8d14-9d53b2c6433a
+Load Area Completed. Grid ID: grid_896481c9
+Testing Grid details for Grid ID: grid_896481c9
+Started classification job: 2320e5f9-6081-4146-96ff-c330e6592028
+Classify Pending... 0.1%
+Classification Completed
+Cancelled job status: completed

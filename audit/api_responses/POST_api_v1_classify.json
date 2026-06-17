@@ -1,0 +1,9 @@
+{
+  "status": 202,
+  "body": {
+    "job_id": "5f24f193-efc5-4d54-9482-40d506c28c71",
+    "status_url": "/api/v1/classify-status/5f24f193-efc5-4d54-9482-40d506c28c71",
+    "websocket_url": "ws://localhost:8000/api/v1/ws/progress/5f24f193-efc5-4d54-9482-40d506c28c71"
+  },
+  "duration": 2.012263536453247
+}

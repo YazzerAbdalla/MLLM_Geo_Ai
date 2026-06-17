@@ -1,0 +1,12 @@
+{
+  "status": 200,
+  "body": {
+    "job_id": "2320e5f9-6081-4146-96ff-c330e6592028",
+    "status": "completed",
+    "step": "done",
+    "progress": 1.0,
+    "error": "all input arrays must have the same shape",
+    "result_url": "/api/v1/classification-result/2320e5f9-6081-4146-96ff-c330e6592028"
+  },
+  "duration": 2.011967420578003
+}
