@@ -104,43 +104,8 @@ def load_area_task(self, job_id: str, bbox: list, grid_size: int, modalities: li
            job = store.get_job(job_id) or {}
 
            if job.get("status") == "cancelled":
-               raise Ignore()
-
-        store.update_job(job_id, step="processing_poi", progress=0.8)
-        if "poi" in modalities:
-            from app.infrastructure.data_loader import load_project_data
-            from app.domain.spatial_service import join_points_to_grid
-
-            csv_path = "data/raw/project.csv"
-            points_gdf = load_project_data(csv_path)
-
-            joined = join_points_to_grid(points_gdf, grid_gdf)
-
-            if len(joined) > 0:
-                poi_counts = joined.groupby("cell_id").size()
-                grid_gdf["poi_count"] = (
-                    grid_gdf["cell_id"].map(poi_counts).fillna(0).astype(int)
-                )
-                text_des = joined.groupby("cell_id")["text_des"].apply(
-                    lambda x: " ".join(x.astype(str))
-                )
-                grid_gdf["text_des"] = (
-                    grid_gdf["cell_id"].map(text_des).fillna("")
-                )
-
-                os.makedirs("data/raw", exist_ok=True)
-                pois_path = f"data/raw/pois_{grid_id}.geojson"
-                pois_gdf = joined.drop(columns=["index_right"], errors="ignore")
-                pois_gdf["amenity"] = pois_gdf.get("category", "Unknown")
-                pois_gdf.to_file(pois_path, driver="GeoJSON")
-            else:
-                grid_gdf["poi_count"] = 0
-                grid_gdf["text_des"] = ""
-
-            job = store.get_job(job_id) or {}
-            if job.get("status") == "cancelled":
-                raise Ignore()
-
+              raise Ignore()
+       
         store.store_grid(grid_id, {"gdf": grid_gdf, "bbox": bbox})
        
         store.update_job(job_id, status="completed", step="done", progress=1.0, grid_id=grid_id, num_cells=len(grid_gdf))
