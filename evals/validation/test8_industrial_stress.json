@@ -1,0 +1,16 @@
+{
+  "total_samples": 300,
+  "predictions": {
+    "Industrial": 80,
+    "Commercial": 116,
+    "Residential": 104
+  },
+  "industrial_count": 80,
+  "industrial_pct": 26.666666666666668,
+  "industrial_confidence": {
+    "avg": 0.6132272481918335,
+    "min": 0.38109931349754333,
+    "max": 0.9720682501792908
+  },
+  "verdict": "PASS"
+}

@@ -1,0 +1,112 @@
+{
+  "area": "commercial",
+  "bbox": [
+    31.23,
+    30.04,
+    31.24,
+    30.05
+  ],
+  "grid_id": "grid_145ada0a",
+  "num_cells": 9,
+  "class_distribution": {
+    "Commercial": 6,
+    "Residential": 3
+  },
+  "commercial_pct": 66.66666666666666,
+  "avg_confidence": 0.7827276157008277,
+  "confidence_min": 0.3502011299133301,
+  "confidence_max": 0.9996846914291382,
+  "cell_details": [
+    {
+      "cell_id": 0,
+      "dominant_class": "Commercial",
+      "confidence": 0.35524889826774597,
+      "confidences": {
+        "residential": 0.3369239270687103,
+        "commercial": 0.35524889826774597,
+        "industrial": 0.3078272044658661
+      }
+    },
+    {
+      "cell_id": 1,
+      "dominant_class": "Commercial",
+      "confidence": 0.36156415939331055,
+      "confidences": {
+        "residential": 0.34554970264434814,
+        "commercial": 0.36156415939331055,
+        "industrial": 0.2928861677646637
+      }
+    },
+    {
+      "cell_id": 2,
+      "dominant_class": "Residential",
+      "confidence": 0.3502011299133301,
+      "confidences": {
+        "residential": 0.3502011299133301,
+        "commercial": 0.3491886556148529,
+        "industrial": 0.30061018466949463
+      }
+    },
+    {
+      "cell_id": 3,
+      "dominant_class": "Commercial",
+      "confidence": 0.9996846914291382,
+      "confidences": {
+        "residential": 0.0002893869823310524,
+        "commercial": 0.9996846914291382,
+        "industrial": 2.592285818536766e-05
+      }
+    },
+    {
+      "cell_id": 4,
+      "dominant_class": "Commercial",
+      "confidence": 0.9996024966239929,
+      "confidences": {
+        "residential": 0.0003683939285110682,
+        "commercial": 0.9996024966239929,
+        "industrial": 2.9023969545960426e-05
+      }
+    },
+    {
+      "cell_id": 5,
+      "dominant_class": "Residential",
+      "confidence": 0.9966895580291748,
+      "confidences": {
+        "residential": 0.9966895580291748,
+        "commercial": 0.0011046718573197722,
+        "industrial": 0.0022058244794607162
+      }
+    },
+    {
+      "cell_id": 6,
+      "dominant_class": "Residential",
+      "confidence": 0.9992172718048096,
+      "confidences": {
+        "residential": 0.9992172718048096,
+        "commercial": 0.0005840915837325156,
+        "industrial": 0.00019856290600728244
+      }
+    },
+    {
+      "cell_id": 7,
+      "dominant_class": "Commercial",
+      "confidence": 0.9913110733032227,
+      "confidences": {
+        "residential": 0.008380402810871601,
+        "commercial": 0.9913110733032227,
+        "industrial": 0.0003085147181991488
+      }
+    },
+    {
+      "cell_id": 8,
+      "dominant_class": "Commercial",
+      "confidence": 0.9910292625427246,
+      "confidences": {
+        "residential": 0.008707602508366108,
+        "commercial": 0.9910292625427246,
+        "industrial": 0.0002631045936141163
+      }
+    }
+  ],
+  "verdict": "PASS"
+}

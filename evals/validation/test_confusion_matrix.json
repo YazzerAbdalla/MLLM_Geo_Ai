@@ -1,0 +1,32 @@
+{
+  "split_sizes": {
+    "train": 816,
+    "val": 175,
+    "test": 175
+  },
+  "confusion_matrix": [
+    [
+      146,
+      0,
+      0
+    ],
+    [
+      0,
+      28,
+      0
+    ],
+    [
+      0,
+      0,
+      1
+    ]
+  ],
+  "class_names": [
+    "Residential",
+    "Commercial",
+    "Industrial"
+  ],
+  "accuracy": 1.0,
+  "weighted_f1": 1.0,
+  "macro_f1": 1.0
+}

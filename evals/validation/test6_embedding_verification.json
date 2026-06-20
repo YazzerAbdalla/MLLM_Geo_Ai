@@ -1,0 +1,15 @@
+{
+  "with_poi": {
+    "min": 4.999999523162842,
+    "max": 5.000000476837158,
+    "avg": 5.0
+  },
+  "without_poi": {
+    "min": 0.0,
+    "max": 0.0,
+    "avg": 0.0
+  },
+  "all_with_poi_positive": true,
+  "all_empty_zero": true,
+  "verdict": "PASS"
+}

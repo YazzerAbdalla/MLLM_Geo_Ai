@@ -1,0 +1,15 @@
+{
+  "n_samples": 100,
+  "with_poi_dist": {
+    "Industrial": 38,
+    "Residential": 30,
+    "Commercial": 32
+  },
+  "without_poi_dist": {
+    "Residential": 45,
+    "Commercial": 55
+  },
+  "changes": 61,
+  "change_pct": 61.0,
+  "verdict": "PASS"
+}

@@ -1,0 +1,16 @@
+{
+  "checkpoint_loaded": true,
+  "differs_from_random": true,
+  "total_parameters": 165635,
+  "trained_mean": [
+    0.3276633322238922,
+    0.3638783395290375,
+    0.3084585964679718
+  ],
+  "random_mean": [
+    0.3156769871711731,
+    0.3566654622554779,
+    0.3276577591896057
+  ],
+  "non_uniform_count": 478
+}

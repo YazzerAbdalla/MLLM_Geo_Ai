@@ -1,0 +1,53 @@
+{
+  "residential_features": {
+    "dist": {
+      "Commercial": 40,
+      "Residential": 36,
+      "Industrial": 24
+    },
+    "avg_conf": 0.7640754580497742,
+    "avg_probs": {
+      "Residential": 0.3619505763053894,
+      "Commercial": 0.3854057788848877,
+      "Industrial": 0.2526436746120453
+    },
+    "dominant": "Commercial"
+  },
+  "commercial_features": {
+    "dist": {
+      "Commercial": 34,
+      "Residential": 32,
+      "Industrial": 34
+    },
+    "avg_conf": 0.8496779799461365,
+    "avg_probs": {
+      "Residential": 0.3054676949977875,
+      "Commercial": 0.39148131012916565,
+      "Industrial": 0.3030509352684021
+    },
+    "dominant": "Commercial"
+  },
+  "industrial_features": {
+    "dist": {
+      "Industrial": 23,
+      "Commercial": 38,
+      "Residential": 39
+    },
+    "avg_conf": 0.6852973103523254,
+    "avg_probs": {
+      "Residential": 0.39180970191955566,
+      "Commercial": 0.3541300594806671,
+      "Industrial": 0.25406017899513245
+    },
+    "dominant": "Residential"
+  },
+  "dominant_classes": [
+    "Commercial",
+    "Commercial",
+    "Residential"
+  ],
+  "model_distinguishes_classes": true,
+  "verdict_residential": "WARN",
+  "verdict_commercial": "PASS",
+  "verdict_industrial": "WARN"
+}

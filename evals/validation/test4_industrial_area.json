@@ -1,0 +1,224 @@
+{
+  "area": "industrial",
+  "bbox": [
+    31.15,
+    30.1,
+    31.17,
+    30.12
+  ],
+  "grid_id": "grid_6f51bcf3",
+  "num_cells": 25,
+  "class_distribution": {
+    "Residential": 25
+  },
+  "industrial_count": 0,
+  "industrial_pct": 0.0,
+  "industrial_confidence_stats": {
+    "min": 0,
+    "max": 0,
+    "avg": 0
+  },
+  "cell_details": [
+    {
+      "cell_id": 0,
+      "dominant_class": "Residential",
+      "confidence": 0.48418059945106506,
+      "confidences": {
+        "residential": 0.48418059945106506,
+        "commercial": 0.31743115186691284,
+        "industrial": 0.1983882337808609
+      }
+    },
+    {
+      "cell_id": 1,
+      "dominant_class": "Residential",
+      "confidence": 0.449859082698822,
+      "confidences": {
+        "residential": 0.449859082698822,
+        "commercial": 0.33827006816864014,
+        "industrial": 0.21187087893486023
+      }
+    },
+    {
+      "cell_id": 2,
+      "dominant_class": "Residential",
+      "confidence": 0.4176890552043915,
+      "confidences": {
+        "residential": 0.4176890552043915,
+        "commercial": 0.3590816855430603,
+        "industrial": 0.2232292890548706
+      }
+    },
+    {
+      "cell_id": 3,
+      "dominant_class": "Residential",
+      "confidence": 0.40677687525749207,
+      "confidences": {
+        "residential": 0.40677687525749207,
+        "commercial": 0.37505173683166504,
+        "industrial": 0.2181713879108429
+      }
+    },
+    {
+      "cell_id": 4,
+      "dominant_class": "Residential",
+      "confidence": 0.5090439915657043,
+      "confidences": {
+        "residential": 0.5090439915657043,
+        "commercial": 0.32484379410743713,
+        "industrial": 0.16611221432685852
+      }
+    },
+    {
+      "cell_id": 5,
+      "dominant_class": "Residential",
+      "confidence": 0.4251730442047119,
+      "confidences": {
+        "residential": 0.4251730442047119,
+        "commercial": 0.3561129868030548,
+        "industrial": 0.21871398389339447
+      }
+    },
+    {
+      "cell_id": 6,
+      "dominant_class": "Residential",
+      "confidence": 0.4321458637714386,
+      "confidences": {
+        "residential": 0.4321458637714386,
+        "commercial": 0.34998250007629395,
+        "industrial": 0.21787160634994507
+      }
+    },
+    {
+      "cell_id": 7,
+      "dominant_class": "Residential",
+      "confidence": 0.4177776575088501,
+      "confidences": {
+        "residential": 0.4177776575088501,
+        "commercial": 0.3700757920742035,
+        "industrial": 0.21214653551578522
+      }
+    },
+    {
+      "cell_id": 8,
+      "dominant_class": "Residential",
+      "confidence": 0.4551429748535156,
+      "confidences": {
+        "residential": 0.4551429748535156,
+        "commercial": 0.3450920581817627,
+        "industrial": 0.19976498186588287
+      }
+    },
+    {
+      "cell_id": 9,
+      "dominant_class": "Residential",
+      "confidence": 0.4491545855998993,
+      "confidences": {
+        "residential": 0.4491545855998993,
+        "commercial": 0.34374895691871643,
+        "industrial": 0.20709647238254547
+      }
+    },
+    {
+      "cell_id": 10,
+      "dominant_class": "Residential",
+      "confidence": 0.4542650282382965,
+      "confidences": {
+        "residential": 0.4542650282382965,
+        "commercial": 0.3471584618091583,
+        "industrial": 0.1985764503479004
+      }
+    },
+    {
+      "cell_id": 11,
+      "dominant_class": "Residential",
+      "confidence": 0.5047268867492676,
+      "confidences": {
+        "residential": 0.5047268867492676,
+        "commercial": 0.3182600438594818,
+        "industrial": 0.1770130842924118
+      }
+    },
+    {
+      "cell_id": 12,
+      "dominant_class": "Residential",
+      "confidence": 0.40677687525749207,
+      "confidences": {
+        "residential": 0.40677687525749207,
+        "commercial": 0.37505173683166504,
+        "industrial": 0.2181713879108429
+      }
+    },
+    {
+      "cell_id": 13,
+      "dominant_class": "Residential",
+      "confidence": 0.5090439915657043,
+      "confidences": {
+        "residential": 0.5090439915657043,
+        "commercial": 0.32484379410743713,
+        "industrial": 0.16611221432685852
+      }
+    },
+    {
+      "cell_id": 14,
+      "dominant_class": "Residential",
+      "confidence": 0.4251730442047119,
+      "confidences": {
+        "residential": 0.4251730442047119,
+        "commercial": 0.3561129868030548,
+        "industrial": 0.21871398389339447
+      }
+    },
+    {
+      "cell_id": 15,
+      "dominant_class": "Residential",
+      "confidence": 0.4463522732257843,
+      "confidences": {
+        "residential": 0.4463522732257843,
+        "commercial": 0.344668447971344,
+        "industrial": 0.20897923409938812
+      }
+    },
+    {
+      "cell_id": 16,
+      "dominant_class": "Residential",
+      "confidence": 0.43111109733581543,
+      "confidences": {
+        "residential": 0.43111109733581543,
+        "commercial": 0.3539498746395111,
+        "industrial": 0.21493908762931824
+      }
+    },
+    {
+      "cell_id": 17,
+      "dominant_class": "Residential",
+      "confidence": 0.4932999014854431,
+      "confidences": {
+        "residential": 0.4932999014854431,
+        "commercial": 0.3240688443183899,
+        "industrial": 0.18263126909732819
+      }
+    },
+    {
+      "cell_id": 18,
+      "dominant_class": "Residential",
+      "confidence": 0.4954044818878174,
+      "confidences": {
+        "residential": 0.4954044818878174,
+        "commercial": 0.3171989917755127,
+        "industrial": 0.18739649653434753
+      }
+    },
+    {
+      "cell_id": 19,
+      "dominant_class": "Residential",
+      "confidence": 0.5237078666687012,
+      "confidences": {
+        "residential": 0.5237078666687012,
+        "commercial": 0.31739678978919983,
+        "industrial": 0.15889538824558258
+      }
+    }
+  ],
+  "verdict": "FAIL"
+}

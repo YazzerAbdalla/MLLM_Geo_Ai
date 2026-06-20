@@ -8,7 +8,6 @@
 
 import os
 import json
-from collections import Counter
 
 import numpy as np
 import torch
@@ -183,6 +182,10 @@ class MultiModalClassificationUseCase:
                         0.0
                     ),
                     "geometry": cell.geometry,
+                    "poi_categories": cell.get(
+                        "poi_categories",
+                        []
+                    ),
 
                     # Explainability defaults
                      "text_embedding_norm": 0.0,
@@ -384,20 +387,9 @@ class MultiModalClassificationUseCase:
                 # Top POI Categories
                 # ----------------------------------------------
 
-                text_desc = cell_info["text"]
-
-                poi_top = []
-
-                if text_desc:
-
-                    word_counts = Counter(
-                        text_desc.split()
-                    )
-
-                    poi_top = [
-                        w for w, _
-                        in word_counts.most_common(3)
-                    ]
+                poi_top = cell_info.get(
+                    "poi_categories", []
+                )[:3]
 
                 # [VAL-E] Output serialization check
                 print(f"[VAL-E] CELL={i} TEXT_EMBEDDING_NORM={cell_info.get('text_embedding_norm', 0.0)}")

@@ -1,0 +1,17 @@
+{
+  "checkpoint_path": "D:\\Projects\\MLLM_Geo_Ai\\models\\urban_mlp.pt",
+  "file_size_kb": 649.9853515625,
+  "total_parameters": 165635,
+  "checkpoint_loaded": false,
+  "trained_mean_probs": [
+    0.331493079662323,
+    0.29364895820617676,
+    0.37485790252685547
+  ],
+  "random_mean_probs": [
+    0.30837470293045044,
+    0.34113913774490356,
+    0.35048604011535645
+  ],
+  "differs_from_random": true
+}

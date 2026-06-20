@@ -1,0 +1,147 @@
+{
+  "name": "commercial",
+  "expected": "Commercial",
+  "num_cells": 9,
+  "class_distribution": {
+    "Commercial": 7,
+    "Residential": 2
+  },
+  "expected_pct": 77.77777777777779,
+  "industrial_count": 0,
+  "avg_confidence": 0.7980990178055234,
+  "cells": [
+    {
+      "cell_id": 0,
+      "cls": "Commercial",
+      "conf": 0.39856356382369995,
+      "norms": 0.0,
+      "confidences": {
+        "residential": 0.26511651277542114,
+        "commercial": 0.39856356382369995,
+        "industrial": 0.3363199234008789
+      },
+      "poi_top": []
+    },
+    {
+      "cell_id": 1,
+      "cls": "Commercial",
+      "conf": 0.4059586226940155,
+      "norms": 0.0,
+      "confidences": {
+        "residential": 0.2473839819431305,
+        "commercial": 0.4059586226940155,
+        "industrial": 0.346657395362854
+      },
+      "poi_top": []
+    },
+    {
+      "cell_id": 2,
+      "cls": "Commercial",
+      "conf": 0.3966396450996399,
+      "norms": 0.0,
+      "confidences": {
+        "residential": 0.25957193970680237,
+        "commercial": 0.3966396450996399,
+        "industrial": 0.3437884449958801
+      },
+      "poi_top": []
+    },
+    {
+      "cell_id": 3,
+      "cls": "Commercial",
+      "conf": 0.9997424483299255,
+      "norms": 3.6808316707611084,
+      "confidences": {
+        "residential": 0.00022808289213571697,
+        "commercial": 0.9997424483299255,
+        "industrial": 2.9470285880961455e-05
+      },
+      "poi_top": [
+        "\u062a\u0642\u0639",
+        "\u0641\u064a",
+        "\u0627\u0644\u0642\u0627\u0647\u0631\u0629\u060c"
+      ]
+    },
+    {
+      "cell_id": 4,
+      "cls": "Commercial",
+      "conf": 0.999679684638977,
+      "norms": 3.4347243309020996,
+      "confidences": {
+        "residential": 0.00028411217499524355,
+        "commercial": 0.999679684638977,
+        "industrial": 3.619674316723831e-05
+      },
+      "poi_top": [
+        "\u062a\u0642\u0639",
+        "\u0641\u064a",
+        "\u0627\u0644\u0642\u0627\u0647\u0631\u0629\u060c"
+      ]
+    },
+    {
+      "cell_id": 5,
+      "cls": "Residential",
+      "conf": 0.992621660232544,
+      "norms": 3.868607997894287,
+      "confidences": {
+        "residential": 0.992621660232544,
+        "commercial": 0.0024286783300340176,
+        "industrial": 0.004949655383825302
+      },
+      "poi_top": [
+        "\u062a\u0642\u0639",
+        "\u0645\u0633\u062a\u0634\u0641\u0649",
+        "\u0647\u064a\u0626\u0629"
+      ]
+    },
+    {
+      "cell_id": 6,
+      "cls": "Residential",
+      "conf": 0.9988001585006714,
+      "norms": 3.5211923122406006,
+      "confidences": {
+        "residential": 0.9988001585006714,
+        "commercial": 0.0009089678060263395,
+        "industrial": 0.00029087523580528796
+      },
+      "poi_top": [
+        "\u062a\u0642\u0639",
+        "\u0645\u0643\u062a\u0628",
+        "\u0635\u062d\u0629"
+      ]
+    },
+    {
+      "cell_id": 7,
+      "cls": "Commercial",
+      "conf": 0.9957008957862854,
+      "norms": 3.6206281185150146,
+      "confidences": {
+        "residential": 0.003935045562684536,
+        "commercial": 0.9957008957862854,
+        "industrial": 0.0003640878712758422
+      },
+      "poi_top": [
+        "\u062a\u0642\u0639",
+        "\u0641\u064a",
+        "\u0627\u0644\u0642\u0627\u0647\u0631\u0629\u060c"
+      ]
+    },
+    {
+      "cell_id": 8,
+      "cls": "Commercial",
+      "conf": 0.9951844811439514,
+      "norms": 3.4757485389709473,
+      "confidences": {
+        "residential": 0.004518843721598387,
+        "commercial": 0.9951844811439514,
+        "industrial": 0.0002967364853248
+      },
+      "poi_top": [
+        "\u062a\u0642\u0639",
+        "Egbank",
+        "\u0641\u064a"
+      ]
+    }
+  ],
+  "verdict": "PASS"
+}
