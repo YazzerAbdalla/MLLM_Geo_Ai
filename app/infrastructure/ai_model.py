@@ -20,7 +20,15 @@ class Embedder:
         """
          * Initializes the Embedder with a specific pre-trained model.
         """
-        self.model = SentenceTransformer(model_name)
+        import traceback
+        print("[VAL-B] Loading SentenceTransformer...")
+        try:
+            self.model = SentenceTransformer(model_name)
+            print(f"[VAL-B] Model loaded: {model_name}")
+        except Exception as e:
+            print(f"[VAL-B] CRASHED: {type(e).__name__}: {e}")
+            traceback.print_exc()
+            raise
 
         try:
             self.redis_client = redis.from_url(REDIS_URL, decode_responses=False)
@@ -51,7 +59,15 @@ class Embedder:
         * @param {list} texts - A list of strings to be embedded
         * @returns {np.ndarray} An array of embeddings
         """
-        return self.model.encode(texts)
+        print(f"[VAL-C] Received {len(texts)} text(s)")
+        result = self.model.encode(texts)
+        for i, t in enumerate(texts):
+            emb = result[i] if result.ndim > 1 else result
+            norm = float(np.linalg.norm(emb))
+            print(f"[VAL-C] CELL={i} SHAPE={emb.shape} DTYPE={emb.dtype} NORM={norm:.4f}")
+            if norm < 0.001:
+                print(f"[VAL-C] *** ZERO EMBEDDING DETECTED *** text_preview={str(t)[:80]}")
+        return result
 
 def aggregate_cell_embeddings(joined_gdf: pd.DataFrame) -> pd.DataFrame:
     """

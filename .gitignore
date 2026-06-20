@@ -11,6 +11,7 @@ build/
 .venv/
 venv/
 ENV/
+nul
 
 # ML Models (keep urban_mlp.pt tracked, ignore others)
 models/*

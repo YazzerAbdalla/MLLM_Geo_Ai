@@ -203,6 +203,13 @@ class MultiModalClassificationUseCase:
 
                 text = cell_info["text"]
 
+                # [VAL-A] Runtime text verification
+                print(f"[VAL-A] CELL={i}")
+                print(f"[VAL-A] TEXT_EXISTS={bool(text)}")
+                text_str = str(text) if text else ""
+                print(f"[VAL-A] TEXT_LENGTH={len(text_str)}")
+                print(f"[VAL-A] TEXT_PREVIEW={text_str[:100]}")
+
                 if text:
                     poi_emb = (
                         self.poi_encoder.embed_texts(
@@ -255,6 +262,12 @@ class MultiModalClassificationUseCase:
                 # ----------------------------------------------
                 # 4. Multimodal Fusion
                 # ----------------------------------------------
+
+                # [VAL-D] Fusion input verification
+                poi_norm_d = float(np.linalg.norm(poi_emb))
+                img_norm_d = float(np.linalg.norm(img_emb))
+                graph_norm_d = float(np.linalg.norm(graph_feat))
+                print(f"[VAL-D] CELL={i} POI_NORM={poi_norm_d:.4f} IMG_NORM={img_norm_d:.4f} GRAPH_NORM={graph_norm_d:.4f}")
 
                 use_attention = (fusion_method == "attention")
                 fused = create_multimodal_feature(
@@ -369,6 +382,10 @@ class MultiModalClassificationUseCase:
                         w for w, _
                         in word_counts.most_common(3)
                     ]
+
+                # [VAL-E] Output serialization check
+                print(f"[VAL-E] CELL={i} TEXT_EMBEDDING_NORM={cell_info.get('text_embedding_norm', 0.0)}")
+                print(f"[VAL-E] CELL={i} POI_TOP={poi_top}")
 
                 # ==================================================
                 # Final Result Object
