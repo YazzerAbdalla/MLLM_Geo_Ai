@@ -38,20 +38,36 @@ class MultiModalClassificationUseCase:
      * - Extra explainability metadata
      """
 
-    def __init__(self):
+    def __init__(self, checkpoint_path: str = "models/urban_mlp.pt"):
         """
          * Initializes the multi-modal classification use case.
          *
          * Components:
          * - POI encoder
          * - Image encoder
-         * - MLP classifier
+         * - MLP classifier (loaded from trained checkpoint)
          *
          * Classifier runs in evaluation mode for inference.
          """
         self.poi_encoder = Embedder()
         self.image_encoder = ImageEncoder()
         self.classifier = UrbanMLP()
+
+        if os.path.exists(checkpoint_path):
+            print(f"[FUSION] Loading trained checkpoint: {checkpoint_path}")
+            try:
+                ckpt = torch.load(checkpoint_path, map_location="cpu")
+                if isinstance(ckpt, dict) and "state_dict" in ckpt:
+                    self.classifier.load_state_dict(ckpt["state_dict"])
+                elif isinstance(ckpt, dict) and any(k.startswith("net.") for k in ckpt):
+                    self.classifier.load_state_dict(ckpt)
+                else:
+                    print(f"[FUSION] WARNING: Unknown checkpoint format, using random weights")
+                print(f"[FUSION] Checkpoint loaded successfully")
+            except Exception as e:
+                print(f"[FUSION] WARNING: Failed to load checkpoint: {e}, using random weights")
+        else:
+            print(f"[FUSION] WARNING: No checkpoint at {checkpoint_path}, using random weights")
 
         self.classifier.eval()
 
