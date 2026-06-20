@@ -1,0 +1,12 @@
+{
+  "total_samples": 1166,
+  "mutual_information_nats": 0.487767,
+  "normalized_mutual_information": 0.455921,
+  "entropy_category_bits": 1.6265,
+  "entropy_label_bits": 0.7037,
+  "chi_square": 2332.0,
+  "chi_square_p_value": 0.0,
+  "chi_square_dof": 8,
+  "cramers_v": 1.0,
+  "all_categories_exclusive": true
+}

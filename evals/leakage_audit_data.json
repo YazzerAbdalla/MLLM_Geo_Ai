@@ -1,0 +1,206 @@
+{
+  "total_samples": 1166,
+  "categories": [
+    "Bank",
+    "Education",
+    "Health",
+    "Industrial",
+    "Mall"
+  ],
+  "labels": [
+    0,
+    1,
+    2
+  ],
+  "class_names": {
+    "0": "Residential",
+    "1": "Commercial",
+    "2": "Industrial"
+  },
+  "contingency_table": {
+    "0": {
+      "Bank": 0,
+      "Education": 379,
+      "Health": 592,
+      "Industrial": 0,
+      "Mall": 0,
+      "Total": 971
+    },
+    "1": {
+      "Bank": 144,
+      "Education": 0,
+      "Health": 0,
+      "Industrial": 0,
+      "Mall": 40,
+      "Total": 184
+    },
+    "2": {
+      "Bank": 0,
+      "Education": 0,
+      "Health": 0,
+      "Industrial": 11,
+      "Mall": 0,
+      "Total": 11
+    },
+    "Total": {
+      "Bank": 144,
+      "Education": 379,
+      "Health": 592,
+      "Industrial": 11,
+      "Mall": 40,
+      "Total": 1166
+    }
+  },
+  "row_percentages": {
+    "0": {
+      "Bank": 0.0,
+      "Education": 100.0,
+      "Health": 100.0,
+      "Industrial": 0.0,
+      "Mall": 0.0
+    },
+    "1": {
+      "Bank": 100.0,
+      "Education": 0.0,
+      "Health": 0.0,
+      "Industrial": 0.0,
+      "Mall": 100.0
+    },
+    "2": {
+      "Bank": 0.0,
+      "Education": 0.0,
+      "Health": 0.0,
+      "Industrial": 100.0,
+      "Mall": 0.0
+    }
+  },
+  "col_percentages": {
+    "0": {
+      "Bank": 0.0,
+      "Education": 39.03,
+      "Health": 60.97,
+      "Industrial": 0.0,
+      "Mall": 0.0
+    },
+    "1": {
+      "Bank": 78.26,
+      "Education": 0.0,
+      "Health": 0.0,
+      "Industrial": 0.0,
+      "Mall": 21.74
+    },
+    "2": {
+      "Bank": 0.0,
+      "Education": 0.0,
+      "Health": 0.0,
+      "Industrial": 100.0,
+      "Mall": 0.0
+    }
+  },
+  "exclusive_mapping": {
+    "Bank": {
+      "labels_found": [
+        1
+      ],
+      "counts": {
+        "1": 144
+      },
+      "total": 144,
+      "exclusive": true
+    },
+    "Education": {
+      "labels_found": [
+        0
+      ],
+      "counts": {
+        "0": 379
+      },
+      "total": 379,
+      "exclusive": true
+    },
+    "Health": {
+      "labels_found": [
+        0
+      ],
+      "counts": {
+        "0": 592
+      },
+      "total": 592,
+      "exclusive": true
+    },
+    "Industrial": {
+      "labels_found": [
+        2
+      ],
+      "counts": {
+        "2": 11
+      },
+      "total": 11,
+      "exclusive": true
+    },
+    "Mall": {
+      "labels_found": [
+        1
+      ],
+      "counts": {
+        "1": 40
+      },
+      "total": 40,
+      "exclusive": true
+    }
+  },
+  "mutual_information": 0.487767,
+  "normalized_mutual_information": 0,
+  "chi_square_statistic": 2332.0,
+  "chi_square_p_value": 0.0,
+  "chi_square_dof": 8,
+  "chi_square_expected": [
+    [
+      119.92,
+      22.72,
+      1.36
+    ],
+    [
+      315.62,
+      59.81,
+      3.58
+    ],
+    [
+      492.99,
+      93.42,
+      5.58
+    ],
+    [
+      9.16,
+      1.74,
+      0.1
+    ],
+    [
+      33.31,
+      6.31,
+      0.38
+    ]
+  ],
+  "cramers_v": 1.0,
+  "class_distribution": {
+    "0": {
+      "count": 971,
+      "name": "Residential"
+    },
+    "1": {
+      "count": 184,
+      "name": "Commercial"
+    },
+    "2": {
+      "count": 11,
+      "name": "Industrial"
+    }
+  },
+  "category_distribution": {
+    "Health": 592,
+    "Education": 379,
+    "Bank": 144,
+    "Mall": 40,
+    "Industrial": 11
+  }
+}
