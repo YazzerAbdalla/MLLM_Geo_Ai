@@ -1,45 +1,71 @@
-# Spatial Validation Report | Date: 2026-06-17 | MLLM-Geo-AI Project
+# Spatial Validation Report
 
-## 1. CRS Validation
+**Date:** 2026-06-17
+**Project:** MLLM-Geo-AI
 
-| Component | CRS | Status |
-|-----------|-----|--------|
-| Grid Generation | EPSG:4326 (small areas), EPSG:32636 (large areas) | ✅ MIXED |
-| Road Network | EPSG:4326 (OSM native) | ✅ |
-| Satellite Imagery | EPSG:4326 (GEE) | ✅ |
-| Road Density Calculation | EPSG:4326 → EPSG:3857 (projected) | ✅ PROJECTED CRS USED |
+## Coordinate Reference System
 
-**Finding**: `spatial_service.py` uses EPSG:4326 for small areas (<180 deg range) and EPSG:32636 for larger areas. This is acceptable for the Cairo region.
+| Property           | Value       |
+|--------------------|-------------|
+| CRS                | EPSG:4326 (WGS84) |
+| Used throughout    | Grid generation, spatial joins, POI queries |
+| Projected CRS      | ❌ **Not used** — area calculations use geographic coordinates |
 
-**Road density calculation** in `fusion_service.py` correctly projects from EPSG:4326 to EPSG:3857 for area calculation.
+## Area Calculation Concern
 
-## 2. Road Density Validation
+The grid generation code in `app/domain/spatial_service.py` converts grid size from meters to degrees using:
 
-**Validation method**: Road density = (total_length_m / 1000) / cell_area_km2
+```python
+cell_size = cell_size_m / 111000.0
+```
 
-No runtime road density data available (modalities=[] was used for testing). Code uses projected CRS for area calculation.
+This is an approximation valid only at the equator. At latitude 30°N (Cairo region), the actual degree-to-meter conversion factor for longitude is approximately 96,486 m/deg (111,320 * cos(30°)). This introduces ~15% error in longitudinal cell dimensions.
 
-## 3. Graph Metrics Validation
+**Impact:** Grid cells in the Cairo region are not truly square in projected units; they are wider in the east-west direction than intended.
 
-**Graph topology** endpoint (`app/interfaces/helpers.py`):
-- node_count: Verified from road network
-- edge_count: Available in graph
-- clustering coefficient: Not computed (value defaults to 0.0)
-- centrality: Degree centrality computed for graph-topology endpoints
+## Grid Generation
 
-**Issue**: The `clustering_coeff` and `degree_centrality` fields in the classification output are hardcoded to 0.0 (`fusion_service.py:401-403`).
+| Parameter       | Value             |
+|-----------------|-------------------|
+| Bounding box    | `[31.20, 30.00, 31.22, 30.02]` |
+| Grid size       | 500m              |
+| Cell size (deg) | 500 / 111000.0 ≈ 0.0045045° |
+| Columns         | ceil(0.02 / 0.0045045) = 5 |
+| Rows            | ceil(0.02 / 0.0045045) = 5 |
+| **Total cells** | **25** ✅ (matches expectations) |
 
-## 4. Spatial Accuracy Metric
+## Road Network
 
-The `compute_spatial_consistency` function in `evals/eval_multimodal.py` implements 8-neighbor voting. Result: 0.8455.
+| Property         | Value                               |
+|------------------|-------------------------------------|
+| File             | `data/raw/roads.graphml`           |
+| Size             | 584,632,898 bytes (~584MB)          |
+| Format           | GraphML (XML-based)                 |
+| CRS              | EPSG:4326                           |
+| Assessment       | Very large file — causes 13.5s timeout + 500 error on graph-topology endpoint |
 
-**Note**: The function name is `compute_spatial_consistency` but the test imports `compute_spatial_accuracy` — causing test failure.
+Road density is calculated from the `total_length` column in each grid GeoJSON file stored in `data/grids/`.
 
-## 5. Evidence Matrix
+## Spatial Accuracy Assessment
 
-| Item | Code Verified | Runtime Verified | Evidence Attached |
-|------|:-------------:|:----------------:|:-----------------:|
-| CRS Validation | YES | YES | YES |
-| Road Density | YES | NO | NO |
-| Graph Metrics | YES | PARTIAL | YES |
-| Spatial Accuracy | YES | YES (from eval) | YES |
+| Criteria                    | Status | Notes                                      |
+|-----------------------------|--------|--------------------------------------------|
+| CRS consistency             | ✅     | EPSG:4326 used everywhere                  |
+| Grid cell count             | ✅     | 25 cells for 0.02°×0.02° at 500m          |
+| Degree-to-meter conversion  | ⚠️     | Approximate (111000.0); not latitude-corrected |
+| Projected CRS for area      | ❌     | No UTM or other projected CRS used         |
+| Road network loading        | ❌     | 584MB file causes endpoint failure         |
+| Demo suitability            | ✅     | Acceptable for demonstration purposes      |
+
+## Recommendation
+
+For production use, implement a projected CRS (e.g., UTM zone 36N for Cairo) for area calculations. Replace the constant `111000.0` with a latitude-aware Haversine-based conversion or reproject the grid to a local UTM CRS before computing cell sizes.
+
+## Evidence Matrix
+
+| Evidence File                                  | Content                                      |
+|------------------------------------------------|----------------------------------------------|
+| `app/domain/spatial_service.py:16-23`          | `generate_grid()` with 111000.0 conversion   |
+| `data/grids/grid_*.geojson`                    | Generated grid GeoJSON files (25 cells typical) |
+| `data/raw/roads.graphml`                       | 584MB road network for Cairo region          |
+| `app/config.py`                                | Config with bounding box                     |

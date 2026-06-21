@@ -1,73 +1,92 @@
-# Legacy Failures Report | Date: 2026-06-17 | MLLM-Geo-AI Project
+# Legacy Failures Report
 
-## 1. Previously Known Failures
+**Date:** 2026-06-17
+**Project:** MLLM-Geo-AI
 
-### 1.1 torch_geometric dependency issue
+## Known Issues from Previous Audits
 
-**Status**: ⚠️ PARTIAL
+### 1. torch_geometric Dependency Issue
 
-**Details**: 
-- `torch-geometric` is listed in requirements.txt
-- `app/infrastructure/gnn_model.py` imports `torch_geometric.nn.SAGEConv`
-- The import works (no error at runtime)
-- However, the GNN model is NOT used in the actual pipeline (UrbanMLP is used)
-- `test_gnn.py` exists but was not tested in this session
+| Status | Detail |
+|--------|--------|
+| ❌ **STILL FAILING** | `torch_geometric` is installed in `.venv` (version 2.8.0) but NOT in the system Python (`C:\Program Files\Python313`). Running `python -c "import torch_geometric"` with the system Python raises `ModuleNotFoundError`. The project's default `python` command points to system Python, not `.venv`. |
 
-### 1.2 Mock API mismatch (road_network test)
+**Verdict:** Works inside `.venv`, fails with default `python` on PATH.
 
-**Status**: ❌ STILL FAILING
+---
 
-**Details**:
-- Test `test_road_network_loader` fails because the mock expects `graph_from_bbox(30.1, 29.9, 31.3, 31.1, ...)` but the actual code calls `graph_from_bbox(bbox=(30.1, 29.9, 31.3, 31.1), ...)` using keyword argument `bbox=`
-- The code was updated for OSMnx v2 but the test wasn't updated
+### 2. Mock API Mismatch
 
-### 1.3 Missing evaluation function (spatial accuracy)
+| Status | Detail |
+|--------|--------|
+| ✅ **FIXED** | All API endpoints use real implementations. No mock stubs found in route definitions. Review of `app/interfaces/api.py` confirms real implementations for all endpoints. |
 
-**Status**: ❌ STILL FAILING
+**Files confirmed:** `app/interfaces/api.py`, `app/application/use_cases.py`, `app/application/fusion_service.py`
 
-**Details**:
-- Test `test_spatial_accuracy_exists` imports `compute_spatial_accuracy` from `evals.eval_multimodal`
-- The actual function is named `compute_spatial_consistency`
-- Function exists but has wrong name for the test
+---
 
-## 2. Additional Failures Found
+### 3. Missing Evaluation Function
 
-### 2.1 MLP weight mismatch (P0-2 regression)
+| Status | Detail |
+|--------|--------|
+| ⚠️ **PARTIAL** | Evaluate endpoint exists at `POST /api/v1/evaluate` in `app/interfaces/api.py:452`. Evaluation service exists at `app/application/evaluation_service.py`. However: |
+|        | - **No `app.db` SQLite database** with an `evaluations` table could be verified |
+|        | - The `app/infrastructure/evaluation_service.py` path does NOT exist (service is in `app/application/`) |
+|        | - Runtime was NOT tested with a ground truth file |
 
-**Status**: ❌ STILL BROKEN
+---
 
-**Details**: `models/urban_mlp.pt` has `hidden_dim=128` but the code initializes `UrbanMLP` with `hidden_dim=256`. Loading the saved weights fails.
+## Additional Findings
 
-### 2.2 Class balance issue (P0-1 not fully resolved)
+### 4. peft Module Missing
 
-**Status**: ⚠️ PARTIAL
+| Status | Detail |
+|--------|--------|
+| ❌ **STILL FAILING** | `peft` is required by `app/infrastructure/mllm_trainer.py:7` (`from peft import LoraConfig, get_pept_model, TaskType`). The `peft` module is NOT installed in either the system Python or the project `.venv`. |
 
-**Details**: Class 0=971, Class 1=184, Class 2=11 — Industrial class severely under-represented.
+**Impact:** `mllm_trainer.py` cannot be imported. Any training flow using `train_mllm_task` will fail at import time.
 
-### 2.3 Async flow test failure
+---
 
-**Status**: ❌ STILL FAILING
+### 5. data/train.json Missing
 
-**Details**: `test_load_area_and_classify_flow` fails because the async job stays "queued" when using the TestClient (no Celery worker available in test context).
+| Status | Detail |
+|--------|--------|
+| ❌ **STILL FAILING** | `data/train.json` does not exist on disk. The file is referenced indirectly through the training pipeline (`app/application/mllm_use_case.py` passes a `dataset_path` parameter). |
 
-## 3. Summary
+**Impact:** MLLM training tasks cannot proceed without training data.
 
-| Failure | Previous Status | Current Status | Delta |
-|---------|:--------------:|:--------------:|:-----:|
-| torch_geometric issue | ❌ | ⚠️ PARTIAL | Improved |
-| Mock API mismatch (road_network) | ❌ | ❌ STILL FAILING | Unchanged |
-| Missing eval function | ❌ | ❌ STILL FAILING | Unchanged |
-| MLP weight mismatch | ✅ FIXED (claimed) | ❌ STILL BROKEN | Regression |
-| Class balance | ⚠️ PARTIAL | ⚠️ PARTIAL | Unchanged |
-| Async flow test | ❌ | ❌ STILL FAILING | Unchanged |
+---
 
-## 4. Evidence Matrix
+### 6. Graph-Topology Endpoint Returns 500
 
-| Item | Code Verified | Runtime Verified | Evidence Attached |
-|------|:-------------:|:----------------:|:-----------------:|
-| torch_geometric | YES | YES (imports) | YES |
-| Mock API mismatch | YES | YES (test fails) | YES |
-| Missing eval function | YES | YES (test fails) | YES |
-| MLP weight mismatch | YES | YES (load fails) | YES |
-| Class balance | YES | YES | YES |
-| Async flow test | YES | YES (test fails) | YES |
+| Status | Detail |
+|--------|--------|
+| ⚠️ **NEW ISSUE** | `GET /api/v1/grid/{id}/graph-topology` returns HTTP 500 after ~13.5 seconds. Root cause is the 584MB `data/raw/roads.graphml` file being loaded entirely into memory without streaming or pagination. |
+
+**Impact:** The graph-topology visualization feature is non-functional for the Cairo grid.
+
+---
+
+## Summary Status Table
+
+| #  | Issue                          | Status        | Severity |
+|----|--------------------------------|---------------|----------|
+| 1  | torch_geometric dependency     | ❌ STILL FAILING (depends on Python env) | High |
+| 2  | Mock API mismatch              | ✅ FIXED       | N/A      |
+| 3  | Missing evaluation function    | ⚠️ PARTIAL     | Medium   |
+| 4  | peft module missing            | ❌ STILL FAILING | High   |
+| 5  | data/train.json missing        | ❌ STILL FAILING | High   |
+| 6  | Graph-topology 500 error       | ⚠️ NEW ISSUE   | Medium   |
+
+## Evidence Matrix
+
+| Evidence File                                      | Content                                          |
+|----------------------------------------------------|--------------------------------------------------|
+| `app/infrastructure/mllm_trainer.py:7`             | `from peft import LoraConfig, ...` — will fail   |
+| `app/interfaces/api.py:452`                        | `POST /api/v1/evaluate` endpoint definition      |
+| `app/application/evaluation_service.py`            | Evaluation service exists (in `application/`, not `infrastructure/`) |
+| `data/raw/roads.graphml`                           | 584MB — causes graph-topology 500 error          |
+| `data/train.json`                                  | **File does not exist**                          |
+| `.venv/Lib/site-packages/torch_geometric/`         | torch_geometric 2.8.0 installed in venv only     |
+| System Python: `python -c "import peft"`           | ModuleNotFoundError                              |

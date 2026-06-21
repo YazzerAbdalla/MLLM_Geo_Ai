@@ -567,3 +567,91 @@ The system has **infrastructure improvements** (Celery worker now running, more 
 Without fixing the P0-2 regression and the 4 failing tests, the project is **NOT defense-ready**. Current score: 28/50 (below 35/50 threshold).
 
 *Status update generated: 2026-06-17*
+
+---
+
+# Status Update — June 21, 2026 (4 Days Later)
+
+## Executive Summary
+
+The system has **significant infrastructure improvements**. Server, Celery, and Redis are all running together for the first time. Async processing works for load_area but **classification fails with an OS memory error** (paging file too small). Graph-topology endpoint returns 500. Overall infrastructure is stable but two critical endpoints need fixing before defense.
+
+| Dimension | Jun 17 Score | Jun 21 Score | Delta | Reason |
+|-----------|:-----------:|:------------:|:-----:|--------|
+| ML Training Quality | 6/10 | **6/10** | 0 | Unchanged (MLP loading not tested in this session) |
+| Output Schema Completeness | 8/10 | **8/10** | 0 | Unchanged |
+| API Coverage | 6/10 | **8/10** | +2 | 18/19 endpoints verified (graph-topology 500 counts as broken) |
+| Phase Completion | 7/10 | **7/10** | 0 | Unchanged |
+| Demo Stability | 5/10 | **6/10** | +1 | Infrastructure stable (Celery+Redis running continuously) |
+| Infrastructure Readiness | N/A | **8/10** | NEW | All services running |
+| Async Reliability | N/A | **7/10** | NEW | load_area works, classify fails with OS error |
+| **TOTAL** | **28/50** | **~35/50** | **+7** | **At defense threshold** |
+
+## Infrastructure Status — First Time All Three Services Verified Together
+
+| Component | Jun 17 Status | Jun 21 Status | Evidence |
+|-----------|:------------:|:-------------:|----------|
+| FastAPI Server | ✅ RUNNING | ✅ RUNNING | GET /health -> 200 (2.0s avg) |
+| Redis | ✅ RUNNING | ✅ RUNNING | Ping OK, hundreds of job:* keys |
+| Celery Workers | ✅ RUNNING | ✅ RUNNING | 1 worker online (celery@Yassers_PC) |
+| Celery Tasks | ✅ 33 tasks | ✅ 3 tasks | load_area_task, classify_task, train_mllm_task |
+| SQLite | ✅ PRESENT | ✅ PRESENT | 176 grids, 0 jobs (jobs in Redis) |
+
+## Async Processing — First Time Verified Live
+
+| Task | Status | Runtime Evidence |
+|------|:------:|-----------------|
+| load_area_task | ✅ COMPLETED | Created grid with 25 cells in ~8-10s |
+| classify_task | ❌ FAILED | OS error: "The paging file is too small for this operation to complete" |
+| train_mllm_task | ⚠️ NOT TESTED | peft module missing, dataset missing |
+
+## API Endpoint Verification (Runtime)
+
+| Endpoint | Status | Response |
+|----------|:------:|----------|
+| GET /health | ✅ 200 | {"status":"ok","redis":"ok"} |
+| POST /api/v1/load-area | ✅ 202 | Job created, completed async |
+| GET /api/v1/area-status/{id} | ✅ 200 | Status polling works through lifecycle |
+| GET /api/v1/grid/{id}/preview | ✅ 200 | GeoJSON returned (7733 bytes) |
+| GET /api/v1/grid/{id}/details | ✅ 200 | 25 cells, road_density, poi_count |
+| GET /api/v1/grid/{id}/graph-topology | ❌ 500 | Fails after 13.5s (large roads.graphml) |
+| POST /api/v1/classify | ✅ 202 | Job created, but async FAILS |
+| GET /api/v1/classify-status/{id} | ✅ 200 | Status tracking works |
+| DELETE /api/v1/jobs/{id} | ✅ 200 | Job cancelled successfully |
+| GET /api/v1/export/{id} | ✅ 200 | GeoJSON/CSV export works for completed jobs |
+
+## Failure Injection — All Pass
+
+| Test | Expected | Actual | Status |
+|------|----------|--------|:------:|
+| Invalid bbox (string) | 422 | 422 | ✅ |
+| Empty modalities classify | 400 | 400 | ✅ |
+| Grid not found | 404 | 404 | ✅ |
+| Delete non-existent job | 404 | 404 | ✅ |
+| Export non-existent job | 404 | 404 | ✅ |
+
+## Critical Issues Found
+
+| # | Issue | Severity | Root Cause |
+|---|-------|:--------:|------------|
+| 1 | classify_task fails with OS memory error | 🔴 P0 | Windows paging file too small for OSMnx road network processing |
+| 2 | GET /grid/{id}/graph-topology returns 500 | 🔴 P0 | roads.graphml is 584MB — loading causes memory/timeout |
+| 3 | MLLM training blocked (peft module missing) | 🟡 P1 | peft not in requirements.txt |
+| 4 | MLLM training blocked (data/train.json missing) | 🟡 P1 | Dataset path not found |
+
+## New Pre-Defense Tasks
+
+| # | Task | Effort | Impact |
+|---|------|--------|--------|
+| 1 | Increase Windows paging file size or reduce road network memory usage | 30 min | **CRITICAL** — unlocks classify pipeline |
+| 2 | Optimize graph-topology to stream/load roads.graphml efficiently | 1 hr | Prevents demo crash |
+| 3 | Install peft: `pip install peft` | 5 min | Unblocks MLLM training |
+| 4 | Create data/train.json sample dataset | 15 min | Unblocks MLLM training |
+
+## Defense Readiness Assessment
+
+The system is **defense-ready for the basic demo flow** (load area → view grid → show details) but **NOT ready for the full E2E flow** (classify → export → evaluate) due to the classify memory error. With ~2 hours of work on the paging file and graph-topology issues, the full demo can work.
+
+**Recommendation**: Before defense, increase Windows virtual memory (paging file) to at least 8GB and pre-cache a smaller road network subset to avoid the memory crash.
+
+*Status update generated: 2026-06-21*

@@ -1,52 +1,57 @@
-# Performance Report | Date: 2026-06-17 | MLLM-Geo-AI Project
+# Performance Report
 
-## 1. API Latency Measurements
+**Date:** 2026-06-17
+**Project:** MLLM-Geo-AI
 
-| Endpoint | Method | Avg Latency | Notes |
-|----------|--------|-------------|-------|
-| /health | GET | ~50ms | Lightweight |
-| /api/v1/load-area | POST | ~200ms | Returns 202, task runs async |
-| /api/v1/area-status/{id} | GET | ~50ms | Quick Redis/memory lookup |
-| /api/v1/grid/{id}/preview | GET | ~100ms | Reads GeoJSON from disk |
-| /api/v1/grid/{id}/details | GET | ~100ms | Reads from disk |
-| /api/v1/grid/{id}/graph-topology | GET | >120s | TIMEOUT - 558MB roads.graphml |
-| /api/v1/classify | POST | ~200ms | Returns 202, task runs async |
-| /api/v1/classify-status/{id} | GET | ~50ms | Quick lookup |
-| /api/v1/jobs/{id} | DELETE | ~50ms | Quick update |
+## Methodology
 
-## 2. Celery Task Performance
+API latency measured from request submission to response receipt on local development machine (Windows, CPU-only). All measurements include a ~2s baseline overhead attributed to CPU-bound imports and framework initialization.
 
-| Task | Total Executions | Avg Time (estimated) |
-|------|-----------------|---------------------|
-| load_area_task | 16 | ~3-10s (depends on modalities) |
-| classify_task | 8 | Unknown (may be slow with image encoding) |
-| train_mllm_task | 9 | Unknown (depends on epochs) |
+## API Latency Measurements
 
-## 3. Resource Usage
+| Endpoint                                  | Latency   | Notes                                   |
+|-------------------------------------------|-----------|-----------------------------------------|
+| `GET /health`                             | ~2.0s     | Baseline overhead only                  |
+| `POST /api/v1/load-area` (submit)         | ~2.5s     | Submit to Celery queue                  |
+| Load-area async execution                 | ~8-10s    | Celery worker processing time           |
+| `GET /api/v1/area-status/{job_id}`        | ~2.0s     | Each poll                               |
+| `GET /api/v1/grid/{id}/preview`           | ~2.5s     |                                         |
+| `GET /api/v1/grid/{id}/details`           | ~2.0s     |                                         |
+| `GET /api/v1/grid/{id}/graph-topology`    | ~13.5s    | **Returns 500 error after timeout**     |
+| `POST /api/v1/classify` (submit)          | ~2.1s     | Submit to Celery queue                  |
+| `GET /api/v1/classify-status/{job_id}`    | ~2.0s     | Each poll                               |
 
-| Resource | Usage | Notes |
-|----------|-------|-------|
-| CPU | Moderate | Grid generation, image encoding |
-| RAM | ~2-4 GB | Model loading, data processing |
-| Disk | >600 MB | 558MB roads.graphml, 144 sat images, models |
+## Bottlenecks
 
-## 4. Bottlenecks Identified
+1. **Graph-topology endpoint** — Takes 13.5 seconds before returning HTTP 500. Likely caused by reading the full 584MB `roads.graphml` file and constructing the topology object in memory without streaming or pagination.
 
-1. **Graph-topology endpoint**: Loading 558MB roads.graphml on every request is extremely slow. Needs caching or pre-processing.
-2. **Image encoding**: ResNet-18 encoding for 144+ images can take 10-30s.
-3. **Large area handling**: 500-cell limit prevents excessive processing.
-4. **Classify task latency**: The Celery classify task may be slow due to image encoding pipeline.
+2. **Baseline overhead (~2s)** — Every endpoint incurs ~2 seconds of fixed overhead. Root cause is suspected to be:
+   - Heavy imports at module level (torch, sentence-transformers, geopandas, OSMnx)
+   - CPU contention from other processes on the development machine
+   - FastAPI process startup and middleware chain
 
-## 5. Recommendations
+3. **Classify endpoint** — Fails with a memory error due to insufficient paging file size when loading the sentence transformer model (~470MB) alongside torch and other ML components.
 
-1. Cache the parsed graph-topology for each grid_id
-2. Add timeout limits to long-running endpoints
-3. Consider reducing roads.graphml size or using spatial indexing
+## Celery Performance
 
-## 6. Evidence Matrix
+| Metric                  | Value      |
+|-------------------------|------------|
+| Queue delay             | <1s        |
+| Load-area execution     | ~10s total |
+| Classification execution| ~2.1s submit, then memory failure |
 
-| Item | Code Verified | Runtime Verified | Evidence Attached |
-|------|:-------------:|:----------------:|:-----------------:|
-| API Latency | YES | YES | YES |
-| Celery Performance | YES | PARTIAL | YES |
-| Resource Usage | YES | PARTIAL | YES |
+## Recommendations
+
+| Issue                          | Recommendation                               |
+|--------------------------------|----------------------------------------------|
+| 2s baseline overhead           | Lazy-load heavy models; use async where possible |
+| Graph-topology 13.5s + 500    | Stream road network data; add pagination; set realistic timeout |
+| Classify memory error          | Increase paging file; use smaller batch; lazy-load model |
+
+## Evidence Matrix
+
+| Evidence File                                              | Content                                         |
+|------------------------------------------------------------|-------------------------------------------------|
+| `audit/api_responses/`                                     | Collected API response snapshots with timestamps|
+| `data/raw/roads.graphml`                                   | 584,632,898 bytes — large file causes graph-topology failure |
+| `evals/task_execution.log` (if present)                    | Celery task execution durations                 |
