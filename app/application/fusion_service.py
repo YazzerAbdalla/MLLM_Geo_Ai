@@ -401,61 +401,39 @@ class MultiModalClassificationUseCase:
 
                 geometry = cell_info["geometry"]
 
+                geom_dict = getattr(geometry,
+                                    "__geo_interface__",
+                                    {"type": "Polygon",
+                                     "coordinates": []})
+
+                centroid = (
+                    float(geometry.centroid.x),
+                    float(geometry.centroid.y)
+                ) if hasattr(geometry, "centroid") else (0.0, 0.0)
+
                 results.append({
-
-                    "cell_id": cell_id,
-
-                    "dominant_class":
-                        classes[dominant_idx],
-
-                    "confidence":
-                        float(p[dominant_idx]),
-
-                    "confidences": {
-                        "residential": float(p[0]),
-                        "commercial": float(p[1]),
-                        "industrial": float(p[2])
+                    "type": "Feature",
+                    "properties": {
+                        "cell_id": cell_id,
+                        "dominant_class": classes[dominant_idx],
+                        "confidence": float(p[dominant_idx]),
+                        "confidences": {
+                            "residential": float(p[0]),
+                            "commercial": float(p[1]),
+                            "industrial": float(p[2])
+                        },
+                        "road_density": float(road_density),
+                        "node_count": int(node_count),
+                        "degree_centrality": 0.0,
+                        "clustering_coeff": 0.0,
+                        "total_road_length_m": float(cell_info.get("total_length", 0.0)),
+                        "poi_top_categories": poi_top,
+                        "text_embedding_norm": float(cell_info.get("text_embedding_norm", 0.0)),
+                        "graph_embedding_norm": float(cell_info.get("graph_embedding_norm", 0.0)),
+                        "centroid": centroid,
+                        "satellite_thumbnail_url": f"/api/v1/thumbnails/{grid_id}/{cell_id}.jpg"
                     },
-
-                    "road_density":
-                        float(road_density),
-
-                    "node_count":
-                        int(node_count),
-
-                    "degree_centrality": 0.0,
-
-                    "clustering_coeff": 0.0,
-
-                    "total_road_length_m":
-                        float(cell_info.get(
-                            "total_length", 0.0)),
-
-                    "poi_top_categories":
-                        poi_top,
-
-                    "text_embedding_norm":
-                        float(cell_info.get(
-                            "text_embedding_norm", 0.0)),
-                    "graph_embedding_norm":
-                        float(cell_info.get(
-                            "graph_embedding_norm", 0.0)),
-
-                    "geometry":
-                        getattr(geometry,
-                                "__geo_interface__",
-                                {"type": "Polygon",
-                                 "coordinates": []}),
-
-                    "centroid": (
-                        float(geometry.centroid.y),
-                        float(geometry.centroid.x)
-                    ) if hasattr(geometry, "centroid") else (0.0, 0.0),
-
-                    "satellite_thumbnail_url":
-                        f"/api/v1/thumbnails/"
-                        f"{grid_id}/"
-                        f"{cell_id}.jpg"
+                    "geometry": geom_dict
                 })
 
             # ==================================================

@@ -1,0 +1,11 @@
+{
+"type": "FeatureCollection",
+"name": "grid_a2c7db46",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "cell_id": 0, "node_count": 0.0, "total_length": 0.0, "avg_degree": 0.0, "poi_count": 0, "text_des": "", "poi_categories": [ ] }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 31.339826872269363, 30.069132367342704 ], [ 31.339826872269363, 30.073636871847206 ], [ 31.33532236776486, 30.073636871847206 ], [ 31.33532236776486, 30.069132367342704 ], [ 31.339826872269363, 30.069132367342704 ] ] ] } },
+{ "type": "Feature", "properties": { "cell_id": 1, "node_count": 0.0, "total_length": 0.0, "avg_degree": 0.0, "poi_count": 1, "text_des": "تقع عيادات سيمويا الايطالية للتجميل SIMOE Italian Beauty Clinics في القاهرة، مصر. نوع المنطقة: عام. البيانات من OpenStreetMap.", "poi_categories": [ "Health" ] }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 31.339826872269363, 30.073636871847206 ], [ 31.339826872269363, 30.078141376351709 ], [ 31.33532236776486, 30.078141376351709 ], [ 31.33532236776486, 30.073636871847206 ], [ 31.339826872269363, 30.073636871847206 ] ] ] } },
+{ "type": "Feature", "properties": { "cell_id": 2, "node_count": 0.0, "total_length": 0.0, "avg_degree": 0.0, "poi_count": 0, "text_des": "", "poi_categories": [ ] }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 31.344331376773866, 30.069132367342704 ], [ 31.344331376773866, 30.073636871847206 ], [ 31.339826872269363, 30.073636871847206 ], [ 31.339826872269363, 30.069132367342704 ], [ 31.344331376773866, 30.069132367342704 ] ] ] } },
+{ "type": "Feature", "properties": { "cell_id": 3, "node_count": 0.0, "total_length": 0.0, "avg_degree": 0.0, "poi_count": 1, "text_des": "تقع البنك الأهلي المصري في القاهرة، مصر. نوع المنطقة: بنك. البيانات من :contentReference[oaicite:1]{index=1}.", "poi_categories": [ "Bank" ] }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 31.344331376773866, 30.073636871847206 ], [ 31.344331376773866, 30.078141376351709 ], [ 31.339826872269363, 30.078141376351709 ], [ 31.339826872269363, 30.073636871847206 ], [ 31.344331376773866, 30.073636871847206 ] ] ] } }
+]
+}

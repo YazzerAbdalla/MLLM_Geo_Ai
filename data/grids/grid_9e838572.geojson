@@ -1,0 +1,8 @@
+{
+"type": "FeatureCollection",
+"name": "grid_9e838572",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "cell_id": 0, "node_count": 65.0, "total_length": 15225.65234375, "avg_degree": 2.615384578704834, "poi_count": 0, "text_des": "" }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 31.168578364341023, 29.969468877578166 ], [ 31.168578364341023, 29.973973382082669 ], [ 31.16407385983652, 29.973973382082669 ], [ 31.16407385983652, 29.969468877578166 ], [ 31.168578364341023, 29.969468877578166 ] ] ] } }
+]
+}

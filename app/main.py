@@ -18,6 +18,7 @@ from app.infrastructure.redis_store import RedisJobStore
 from app.infrastructure.job_store import _redis_store
 from app.models.grid import Grid
 from app.models.job import Job
+from fastapi.middleware.cors import CORSMiddleware
 
 load_dotenv()
 
@@ -78,6 +79,19 @@ app = FastAPI(
     title="MLLM-Geo-AI-App",
     description="Spatial Grid Classification with Multi-Modal Fusion",
     lifespan=lifespan
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",  # Vite
+        "http://127.0.0.1:5173",
+        "http://localhost:8080",  # Vite
+        "http://127.0.0.1:8080",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Include the routes

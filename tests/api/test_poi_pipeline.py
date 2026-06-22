@@ -318,12 +318,13 @@ def test_classification_receives_non_empty_text_des(client):
     cells_with_norm = 0
 
     for feature in results["features"]:
-        text_embedding_norm = feature.get("text_embedding_norm", 0.0)
+        props = feature.get("properties", feature)
+        text_embedding_norm = props.get("text_embedding_norm", 0.0)
         if text_embedding_norm > 0:
             cells_with_norm += 1
 
         # Also check text_des in the grid data
-        text_des = feature.get("poi_top_categories", [])
+        text_des = props.get("poi_top_categories", [])
         if text_des:
             cells_with_text += 1
 

@@ -1,0 +1,9 @@
+{
+"type": "FeatureCollection",
+"name": "grid_bb85adf5",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "cell_id": 0, "node_count": 71.0, "total_length": 10436.75390625, "avg_degree": 2.7183098793029785, "poi_count": 0, "text_des": "" }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 31.217992016832774, 29.980772482831497 ], [ 31.217992016832774, 29.985276987336 ], [ 31.213487512328271, 29.985276987336 ], [ 31.213487512328271, 29.980772482831497 ], [ 31.217992016832774, 29.980772482831497 ] ] ] } },
+{ "type": "Feature", "properties": { "cell_id": 1, "node_count": 0.0, "total_length": 0.0, "avg_degree": 0.0, "poi_count": 0, "text_des": "" }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 31.222496521337277, 29.980772482831497 ], [ 31.222496521337277, 29.985276987336 ], [ 31.217992016832774, 29.985276987336 ], [ 31.217992016832774, 29.980772482831497 ], [ 31.222496521337277, 29.980772482831497 ] ] ] } }
+]
+}
