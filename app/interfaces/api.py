@@ -30,6 +30,16 @@ from app.application.poi_chat_service import (
     GeminiApiError,
 )
 from app.models.poi_chat import PoiChatRequest, PoiChatResponse
+from app.models.poi_upload import UploadPreviewResponse, ImportResultV2, CancelResponse
+from app.application.poi_upload_service import (
+    MAX_FILE_SIZE,
+    generate_template_csv,
+    parse_and_validate_csv,
+    build_preview_response,
+    import_preview,
+    cancel_preview,
+    cleanup_expired_previews,
+)
 
 import os,io,uuid,json
 import geopandas as gpd
@@ -695,3 +705,66 @@ async def poi_chat(request: PoiChatRequest):
         raise HTTPException(status_code=400, detail=str(e))
     except GeminiApiError as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# --- POI Upload Endpoints ---
+
+@router.get("/poi-upload/template")
+async def download_poi_template():
+    csv_content = generate_template_csv()
+    return Response(
+        content=csv_content,
+        media_type="text/csv",
+        headers={"Content-Disposition": 'attachment; filename="poi_upload_template.csv"'}
+    )
+
+
+@router.post("/poi-upload/preview", response_model=UploadPreviewResponse)
+@router.post("/internal/poi-preview", response_model=UploadPreviewResponse)
+async def upload_poi_preview(file: UploadFile = File(...)):
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="file is required")
+
+    content = await file.read(MAX_FILE_SIZE + 1)
+    if len(content) == 0:
+        raise HTTPException(status_code=400, detail="Uploaded file is empty")
+    if len(content) > MAX_FILE_SIZE:
+        raise HTTPException(status_code=413, detail="File exceeds maximum allowed size of 10 MB")
+
+    try:
+        parsed_pois, validation = parse_and_validate_csv(content)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+
+    if not validation.valid:
+        return UploadPreviewResponse(
+            session_id="",
+            validation=validation,
+            parsed_pois=parsed_pois,
+            category_counts={},
+            total_uploaded=0,
+            duplicates_count=0,
+            features={"type": "FeatureCollection", "features": []},
+        )
+
+    response, _ = build_preview_response(parsed_pois, validation)
+    return response
+
+
+@router.post("/poi-upload/import/{session_id}", response_model=ImportResultV2)
+@router.post("/internal/poi-import/{session_id}", response_model=ImportResultV2)
+async def confirm_poi_import(session_id: str):
+    try:
+        result = import_preview(session_id)
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=404 if "not found" in str(e).lower() else 400, detail=str(e))
+
+
+@router.delete("/poi-upload/preview/{session_id}", response_model=CancelResponse)
+async def cancel_poi_preview(session_id: str):
+    try:
+        result = cancel_preview(session_id)
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))

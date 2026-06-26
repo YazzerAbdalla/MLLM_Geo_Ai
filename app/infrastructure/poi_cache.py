@@ -17,3 +17,9 @@ def get_poi_cache() -> Optional[pd.DataFrame]:
 def clear_poi_cache() -> None:
     global _df
     _df = None
+
+
+def reload_poi_cache(csv_path: str) -> None:
+    global _df
+    _df = pd.read_csv(csv_path)
+    print(f"POI cache reloaded: {len(_df)} rows from {csv_path}")

@@ -17,6 +17,8 @@ from app.infrastructure.db import engine, Base
 from app.infrastructure.redis_store import RedisJobStore
 from app.infrastructure.job_store import _redis_store
 from app.infrastructure import poi_cache
+from app.infrastructure import poi_caches
+from app.application.poi_upload_service import cleanup_expired_previews
 from app.models.grid import Grid
 from app.models.job import Job
 from fastapi.middleware.cors import CORSMiddleware
@@ -73,6 +75,12 @@ async def lifespan(app: FastAPI):
         print("WARNING: EARTH_ENGINE_PROJECT not set in .env. GEE features will fail.")
 
     poi_cache.load_poi_cache("data/raw/project.csv")
+
+    df = poi_cache.get_poi_cache()
+    if df is not None and not df.empty:
+        poi_caches.build_all(df)
+
+    cleanup_expired_previews()
 
     yield
     poi_cache.clear_poi_cache()
