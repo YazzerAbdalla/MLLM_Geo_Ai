@@ -26,3 +26,4 @@ earthengine-api
 onnx
 onnxruntime
 onnxscript
+google-genai

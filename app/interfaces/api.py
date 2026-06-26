@@ -21,6 +21,15 @@ from app.application.internal_poi_service import get_all_pois_heatmap
 from app.application.poi_analysis_service import analyze_poi_area
 from app.models.poi import POIHeatmapResponse, InternalPOIHeatmapResponse
 from app.models.poi_analysis import PoiAnalysisResponse
+from app.application.poi_chat_service import (
+    chat_with_poi_analysis,
+    GeminiConfigError,
+    GeminiTimeoutError,
+    GeminiRateLimitError,
+    GeminiInvalidRequestError,
+    GeminiApiError,
+)
+from app.models.poi_chat import PoiChatRequest, PoiChatResponse
 
 import os,io,uuid,json
 import geopandas as gpd
@@ -654,3 +663,35 @@ async def natural_language_query(body: QueryRequest):
         "query_type": "general",
         "confidence": 0.85
     }
+
+
+# End Point -7 POST /api/v1/internal/poi-chat
+@router.post("/internal/poi-chat", response_model=PoiChatResponse)
+async def poi_chat(request: PoiChatRequest):
+    if request.analysis is None:
+        raise HTTPException(status_code=400, detail="analysis is required")
+    if not request.question.strip():
+        raise HTTPException(status_code=400, detail="Question cannot be empty")
+    try:
+        history_dicts = [
+            m.model_dump() for m in request.history
+        ] if request.history else []
+        result = chat_with_poi_analysis(
+            analysis=request.analysis,
+            question=request.question,
+            history=history_dicts,
+        )
+        return result
+    except GeminiConfigError:
+        raise HTTPException(
+            status_code=503,
+            detail="Gemini service unavailable: API key not configured",
+        )
+    except GeminiTimeoutError as e:
+        raise HTTPException(status_code=504, detail=str(e))
+    except GeminiRateLimitError as e:
+        raise HTTPException(status_code=429, detail=str(e))
+    except GeminiInvalidRequestError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except GeminiApiError as e:
+        raise HTTPException(status_code=500, detail=str(e))
