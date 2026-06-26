@@ -16,6 +16,9 @@ from app.infrastructure.road_network import RoadNetworkLoader
 from app.domain.spatial_service import generate_grid
 from app.interfaces.helpers import _extract_graph_from_grid_data, _graph_to_geojson, validate_ground_truth_file
 from app.application.evaluation_service import evaluate_job, export_evaluation_csv
+from app.application.poi_service import get_poi_heatmap
+from app.application.internal_poi_service import get_all_pois_heatmap
+from app.models.poi import POIHeatmapResponse, InternalPOIHeatmapResponse
 
 import os,io,uuid,json
 import geopandas as gpd
@@ -241,6 +244,38 @@ async def get_grid_pois(grid_id: str):
             })
         return pois
     return []
+
+
+@router.get(
+    "/grid/{grid_id}/poi-heatmap",
+    response_model=POIHeatmapResponse,
+    summary="Get POI heatmap as GeoJSON",
+    description="Returns POI data filtered by grid bounding box, optimized for MapLibre HeatmapLayer.",
+    responses={
+        200: {"content": {"application/geo+json": {}}, "description": "POI heatmap GeoJSON"},
+        404: {"description": "Grid not found"}
+    }
+)
+async def get_grid_poi_heatmap(grid_id: str):
+    result = get_poi_heatmap(grid_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Grid not found")
+    return JSONResponse(content=result, media_type="application/geo+json")
+
+
+@router.get(
+    "/internal/poi-heatmap",
+    response_model=InternalPOIHeatmapResponse,
+    summary="Get all POIs as GeoJSON (internal)",
+    description="Returns every POI from project.csv without grid filtering. For internal visualization.",
+    responses={
+        200: {"content": {"application/geo+json": {}}, "description": "Full POI heatmap GeoJSON"},
+    }
+)
+async def get_internal_poi_heatmap():
+    result = get_all_pois_heatmap()
+    return JSONResponse(content=result, media_type="application/geo+json")
+
 
 @router.post("/classify", status_code=202)
 async def classify_grid(request: ClassifyRequest):

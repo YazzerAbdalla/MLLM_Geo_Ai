@@ -21,6 +21,19 @@ from app.domain.mlp_model import UrbanMLP
 from app.domain.spatial_service import create_multimodal_feature
 
 
+class _NumpyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        if isinstance(obj, np.integer):
+            return int(obj)
+        if isinstance(obj, np.floating):
+            return float(obj)
+        if isinstance(obj, np.bool_):
+            return bool(obj)
+        return super().default(obj)
+
+
 class MultiModalClassificationUseCase:
     """
      * Orchestrates the encoding and classification of multi-modal features.
@@ -89,7 +102,7 @@ class MultiModalClassificationUseCase:
         }
 
         with open(path, "w") as f:
-            json.dump(fc, f)
+            json.dump(fc, f, cls=_NumpyEncoder)
 
         return path
 

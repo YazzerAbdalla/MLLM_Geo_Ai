@@ -16,6 +16,7 @@ from app.interfaces.api import router as api_router
 from app.infrastructure.db import engine, Base
 from app.infrastructure.redis_store import RedisJobStore
 from app.infrastructure.job_store import _redis_store
+from app.infrastructure import poi_cache
 from app.models.grid import Grid
 from app.models.job import Job
 from fastapi.middleware.cors import CORSMiddleware
@@ -71,7 +72,10 @@ async def lifespan(app: FastAPI):
     else:
         print("WARNING: EARTH_ENGINE_PROJECT not set in .env. GEE features will fail.")
 
+    poi_cache.load_poi_cache("data/raw/project.csv")
+
     yield
+    poi_cache.clear_poi_cache()
     engine.dispose()
 
 
