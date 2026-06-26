@@ -1,0 +1,9 @@
+{
+"type": "FeatureCollection",
+"name": "grid_8fb0e7cf",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "cell_id": 0, "node_count": 0.0, "total_length": 0.0, "avg_degree": 0.0, "poi_count": 4, "text_des": "تقع بنك الاسكندرية في القاهرة، مصر. نوع المنطقة: بنك. البيانات من :contentReference[oaicite:1]{index=1}. تقع Banque MISR في القاهرة، مصر. نوع المنطقة: بنك. البيانات من :contentReference[oaicite:1]{index=1}. تقع هذه المنشأة في القاهرة، مصر. نوع المنطقة: مول تجاري (Mall). البيانات من OpenStreetMap. تقع هذه المنشأة في القاهرة، مصر. نوع المنطقة: مول تجاري (Mall). البيانات من OpenStreetMap.", "poi_categories": [ "Bank", "Mall" ] }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 31.34570857259542, 30.071266731178355 ], [ 31.34570857259542, 30.075771235682858 ], [ 31.341204068090917, 30.075771235682858 ], [ 31.341204068090917, 30.071266731178355 ], [ 31.34570857259542, 30.071266731178355 ] ] ] } },
+{ "type": "Feature", "properties": { "cell_id": 1, "node_count": 0.0, "total_length": 0.0, "avg_degree": 0.0, "poi_count": 0, "text_des": "", "poi_categories": [ ] }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 31.350213077099923, 30.071266731178355 ], [ 31.350213077099923, 30.075771235682858 ], [ 31.34570857259542, 30.075771235682858 ], [ 31.34570857259542, 30.071266731178355 ], [ 31.350213077099923, 30.071266731178355 ] ] ] } }
+]
+}

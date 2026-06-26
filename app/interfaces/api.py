@@ -18,7 +18,9 @@ from app.interfaces.helpers import _extract_graph_from_grid_data, _graph_to_geoj
 from app.application.evaluation_service import evaluate_job, export_evaluation_csv
 from app.application.poi_service import get_poi_heatmap
 from app.application.internal_poi_service import get_all_pois_heatmap
+from app.application.poi_analysis_service import analyze_poi_area
 from app.models.poi import POIHeatmapResponse, InternalPOIHeatmapResponse
+from app.models.poi_analysis import PoiAnalysisResponse
 
 import os,io,uuid,json
 import geopandas as gpd
@@ -60,6 +62,10 @@ class MLLMTrainRequest(BaseModel):
     epochs: int = 3
     batch_size: int = 8
     learning_rate: float = 1e-3
+
+class PoiAnalysisRequest(BaseModel):
+    geometry: dict
+    include_location: bool = False
 
 # --- Endpoints ---
 
@@ -276,6 +282,26 @@ async def get_internal_poi_heatmap():
     result = get_all_pois_heatmap()
     return JSONResponse(content=result, media_type="application/geo+json")
 
+
+@router.post(
+    "/internal/poi-analysis",
+    response_model=PoiAnalysisResponse,
+    summary="Analyze POIs within a drawn polygon",
+    description="Returns spatial statistics for POIs inside a GeoJSON Polygon using the cached project.csv dataset.",
+    responses={
+        200: {"model": PoiAnalysisResponse, "description": "POI analysis results"},
+        400: {"description": "Invalid polygon or geometry"}
+    }
+)
+async def poi_analysis(request: PoiAnalysisRequest):
+    try:
+        result = analyze_poi_area(
+            geometry=request.geometry,
+            include_location=request.include_location
+        )
+        return JSONResponse(content=result, media_type="application/json")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/classify", status_code=202)
 async def classify_grid(request: ClassifyRequest):
