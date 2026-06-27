@@ -122,14 +122,14 @@ def load_area_task(self, job_id: str, bbox: list, grid_size: int, modalities: li
                     grid_gdf["cell_id"].map(poi_counts).fillna(0).astype(int)
                 )
                 text_des = joined.groupby("cell_id")["text_des"].apply(
-                    lambda x: " ".join(x.astype(str))
+                    lambda x: " ".join(x.dropna().astype(str))
                 )
                 grid_gdf["text_des"] = (
                     grid_gdf["cell_id"].map(text_des).fillna("")
                 )
 
                 poi_categories = joined.groupby("cell_id")["category"].apply(
-                    lambda x: list(dict.fromkeys(x.astype(str)))  # unique, preserve order
+                    lambda x: list(dict.fromkeys(x.dropna().astype(str)))  # unique, preserve order
                 )
                 grid_gdf["poi_categories"] = (
                     grid_gdf["cell_id"].map(poi_categories).fillna("").apply(

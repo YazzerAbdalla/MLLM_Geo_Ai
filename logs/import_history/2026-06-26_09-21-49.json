@@ -1,0 +1,31 @@
+{
+  "timestamp": "2026-06-26T09:21:49.566015+00:00",
+  "session_id": "3f05c3ba-c498-4a3e-951b-0e419e4a2e83",
+  "total_submitted": 214,
+  "imported_count": 214,
+  "skipped_count": 0,
+  "skipped_coordinates": 0,
+  "skipped_pois": 0,
+  "category_counts": {
+    "Commercial": 134,
+    "Government": 80
+  },
+  "statistics": {
+    "bbox": [
+      29.94851,
+      30.91124,
+      30.11912,
+      31.6625
+    ],
+    "center": [
+      30.033814999999997,
+      31.28687
+    ],
+    "unique_categories": [
+      "Commercial",
+      "Government"
+    ],
+    "average_density": 0.16,
+    "imported_area_deg": 0.128172
+  }
+}
