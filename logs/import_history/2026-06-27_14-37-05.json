@@ -1,0 +1,29 @@
+{
+  "timestamp": "2026-06-27T14:37:05.280976+00:00",
+  "session_id": "9a906cbf-e0fc-417d-91a8-bae9f2c4eeab",
+  "total_submitted": 67,
+  "imported_count": 67,
+  "skipped_count": 0,
+  "skipped_coordinates": 0,
+  "skipped_pois": 0,
+  "category_counts": {
+    "Education": 67
+  },
+  "statistics": {
+    "bbox": [
+      29.82889,
+      30.88889,
+      30.17889,
+      31.70611
+    ],
+    "center": [
+      30.00389,
+      31.2975
+    ],
+    "unique_categories": [
+      "Education"
+    ],
+    "average_density": 0.02,
+    "imported_area_deg": 0.286027
+  }
+}
