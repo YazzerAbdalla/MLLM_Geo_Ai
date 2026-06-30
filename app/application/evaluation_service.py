@@ -174,13 +174,70 @@ def _merge_truth_and_predictions(gt_df, pred_df):
     return merged
 
 
+def _compute_spatial_consistency_from_coords(
+    coords: list,
+    pred_labels: list,
+    k: int = 8
+) -> float:
+    from scipy.spatial import KDTree
+
+    n = len(coords)
+    if n < 2 or n != len(pred_labels):
+        return 1.0
+
+    try:
+        tree = KDTree(coords)
+        effective_k = min(k + 1, n)
+
+        consistent = 0
+        total = 0
+
+        for i in range(n):
+            d, idx = tree.query(coords[i], k=effective_k)
+
+            if isinstance(idx, int):
+                idx = [idx]
+                d = [d]
+
+            weights = {}
+            for dist, ix in zip(d, idx):
+                if ix == i:
+                    continue
+                w = 1.0 / (float(dist) + 1e-9)
+                label = pred_labels[ix]
+                weights[label] = weights.get(label, 0.0) + w
+
+            if not weights:
+                continue
+
+            if pred_labels[i] == max(weights, key=weights.get):
+                consistent += 1
+            total += 1
+
+        return consistent / total if total > 0 else 1.0
+
+    except Exception:
+        return 1.0
+
+
 async def evaluate_job(job_id: str, ground_truth_file: UploadFile):
     gt_df = await _load_table_from_upload(ground_truth_file)
     _, pred_df = _load_job_predictions(job_id)
+
+    merge_key = _detect_column(pred_df.columns, MERGE_KEY_CANDIDATES)
+    centroid_map = {}
+    if merge_key and "centroid" in pred_df.columns:
+        centroid_map = dict(zip(pred_df[merge_key], pred_df["centroid"]))
+
     merged = _merge_truth_and_predictions(gt_df, pred_df)
 
     y_true = merged["_gt_label"].astype(str).tolist()
     y_pred = merged["_pred_label"].astype(str).tolist()
+
+    centroids = []
+    merged_key = _detect_column(merged.columns, MERGE_KEY_CANDIDATES)
+    if merged_key and centroid_map:
+        centroids = [centroid_map.get(cid, (0.0, 0.0)) for cid in merged[merged_key]]
 
     labels = sorted(set(y_true) | set(y_pred))
 
@@ -190,6 +247,8 @@ async def evaluate_job(job_id: str, ground_truth_file: UploadFile):
     per_class_scores = f1_score(y_true, y_pred, average=None, labels=labels, zero_division=0)
     cm = confusion_matrix(y_true, y_pred, labels=labels)
 
+    spatial_accuracy = _compute_spatial_consistency_from_coords(centroids, y_pred)
+
     evaluation_result = {
         "job_id": job_id,
         "num_samples": len(merged),
@@ -197,7 +256,7 @@ async def evaluate_job(job_id: str, ground_truth_file: UploadFile):
         "overall_accuracy": overall_accuracy,
         "macro_f1": macro_f1,
         "weighted_f1": weighted_f1,
-        "spatial_accuracy": overall_accuracy,
+        "spatial_accuracy": spatial_accuracy,
         "per_class_f1": {
             label: float(score)
             for label, score in zip(labels, per_class_scores)
