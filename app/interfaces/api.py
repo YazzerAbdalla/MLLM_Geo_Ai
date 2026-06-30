@@ -21,6 +21,7 @@ from app.application.internal_poi_service import get_all_pois_heatmap
 from app.application.poi_analysis_service import analyze_poi_area
 from app.models.poi import POIHeatmapResponse, InternalPOIHeatmapResponse
 from app.models.poi_analysis import PoiAnalysisResponse
+from app.application.query_engine import GeoQueryEngine
 from app.application.poi_chat_service import (
     chat_with_poi_analysis,
     GeminiConfigError,
@@ -668,11 +669,19 @@ async def natural_language_query(body: QueryRequest):
     if not grid_data:
         raise HTTPException(status_code=404, detail="Grid not found")
 
-    return {
-        "answer": f"This is a stub answer for your query: '{body.question}' regarding grid {body.grid_id}.",
-        "query_type": "general",
-        "confidence": 0.85
-    }
+    classification_results = job_store.get_classify_result(
+        body.grid_id
+    )
+
+    engine = GeoQueryEngine()
+
+    result = engine.query(
+        question=body.question,
+        classification_results=classification_results,
+        grid_gdf=grid_data["gdf"]
+    )
+
+    return result
 
 
 # End Point -7 POST /api/v1/internal/poi-chat

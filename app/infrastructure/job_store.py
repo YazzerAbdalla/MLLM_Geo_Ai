@@ -73,6 +73,15 @@ class JobStore:
 
         return _MEMORY_JOBS.get(job_id)
 
+    def get_classify_result(self, grid_id: str):
+        found = None
+        for job in _MEMORY_JOBS.values():
+            if job.get("type") == "classify" and job.get("status") == "completed" and job.get("grid_id") == grid_id:
+                found = job
+        if found:
+            return found.get("result_data")
+        return None
+
     def delete_job(self, job_id: str):
         _MEMORY_JOBS.pop(job_id, None)
 

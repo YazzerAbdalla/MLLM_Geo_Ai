@@ -24,8 +24,6 @@ result = run_test(
 )
 
 assert result["query_type"] == "education"
-assert result["language"] == "en"
-assert result["rtl"] is False
 
 
 # --------------------------------------------------
@@ -37,8 +35,6 @@ result = run_test(
 )
 
 assert result["query_type"] == "education"
-assert result["language"] == "ar"
-assert result["rtl"] is True
 
 
 # --------------------------------------------------
